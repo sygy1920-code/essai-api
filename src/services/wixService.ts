@@ -5,6 +5,7 @@
 
 import { createClient, ApiKeyStrategy, WixClient, IApiKeyStrategy } from '@wix/sdk';
 import { items } from '@wix/data';
+import { config } from '../config';
 
 /**
  * Member interface based on MemberLookup collection schema
@@ -31,7 +32,7 @@ export interface Member {
 /**
  * Wix Service class
  */
-export class WixService {
+class WixService {
   private client: WixClient<undefined, IApiKeyStrategy, {
     items: typeof items;
   }>;
@@ -40,18 +41,15 @@ export class WixService {
    * Initialize Wix service with API credentials
    */
   constructor() {
-    const apiKey = process.env.WIX_API_KEY;
-    const siteId = process.env.WIX_SITE_ID || '5a9be9f4-02c1-4ec5-93f4-f03240e69bd4';
-
-    if (!apiKey) {
+    if (!config.wix.apiKey) {
       throw new Error('WIX_API_KEY environment variable is required');
     }
 
     this.client = createClient({
       modules: { items },
       auth: ApiKeyStrategy({
-        apiKey,
-        siteId,
+        apiKey: config.wix.apiKey,
+        siteId: config.wix.siteId,
       }),
     });
   }

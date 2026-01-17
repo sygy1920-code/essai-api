@@ -33,7 +33,7 @@ export const routes: RouteConfig[] = [
   // 获取自己的学生列表（需要认证）
   {
     method: 'GET',
-    path: '/students/list',
+    path: '/users/students',
     handler: getMyStudents,
     requireAuth: true,
   },
