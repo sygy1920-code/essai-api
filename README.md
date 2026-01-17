@@ -207,36 +207,14 @@ GET /api/submission/list?page=1&pageSize=10&lang=en
 
 在 `.env` 或 `local.settings.json` 中配置：
 
-```env
-# 数据库配置
-DATABASE_URL="sqlserver://essaib2b.database.windows.net:1433;database=b2bdatabase;user=sqladminlogin;password=***;encrypt=true;trustServerCertificate=false;"
-DB_HOST=essaib2b.database.windows.net
-DB_PORT=1433
-DB_USER=sqladminlogin
-DB_PASSWORD=your_password
-DB_NAME=b2bdatabase
-DB_SSL=true
-DB_CONNECTION_LIMIT=10
-
-# JWT 配置
-JWT_SECRET=946f0a145ab668dcee27205182966862f36e1c242015a09ef7f7f2a138cb50df
-JWT_EXPIRES_IN=7d
-
-# Wix 配置
-WIX_API_KEY=your_wix_api_key
-
-# 应用配置
-NODE_ENV=development
-```
-
 ### 配置说明
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `DATABASE_URL` | Prisma 数据库连接字符串 | - |
-| `DB_HOST` | 数据库主机 | essaib2b.database.windows.net |
-| `DB_PORT` | 数据库端口 | 1433 |
-| `DB_NAME` | 数据库名称 | b2bdatabase |
+| `DB_HOST` | 数据库主机 | - |
+| `DB_PORT` | 数据库端口 | - |
+| `DB_NAME` | 数据库名称 | - |
 | `JWT_SECRET` | JWT 签名密钥 | - |
 | `JWT_EXPIRES_IN` | JWT 过期时间 | 7d |
 | `WIX_API_KEY` | Wix API 密钥 | - |
