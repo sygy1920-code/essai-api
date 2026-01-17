@@ -5,6 +5,7 @@
 import type { RouteHandler } from '../utils/koa-adapter';
 import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
+import { getSubmissionList } from './submissions';
 
 export interface RouteConfig {
   method: string;
@@ -35,6 +36,14 @@ export const routes: RouteConfig[] = [
     method: 'GET',
     path: '/users/students',
     handler: getMyStudents,
+    requireAuth: true,
+  },
+
+  // 获取作业提交列表（需要认证，支持分页和多语言）
+  {
+    method: 'GET',
+    path: '/submission/list',
+    handler: getSubmissionList,
     requireAuth: true,
   },
 ];
