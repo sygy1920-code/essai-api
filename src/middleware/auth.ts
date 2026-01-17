@@ -54,38 +54,3 @@ export function extractToken(authHeader?: string): string | null {
 
   return null;
 }
-
-/**
- * Koa JWT 认证中间件
- */
-import { Middleware } from 'koa';
-
-// 扩展 Koa Context 类型
-declare module 'koa' {
-  interface BaseContext {
-    user?: DecodedToken;
-    state: {
-      requireAuth?: boolean;
-    };
-  }
-}
-
-export const authMiddleware: Middleware = async (ctx, next) => {
-  // 跳过不需要认证的路由
-  if (ctx.state.requireAuth === false) {
-    await next();
-    return;
-  }
-
-  const authHeader = ctx.headers.authorization;
-  const token = extractToken(authHeader);
-
-  if (token) {
-    const decoded = verifyToken(token);
-    if (decoded) {
-      ctx.user = decoded;
-    }
-  }
-
-  await next();
-};
