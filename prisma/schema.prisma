@@ -1,0 +1,962 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model AlertLog {
+  AlertHash String    @id(map: "PK__AlertLog__CCB353E2CEBDD989") @db.VarChar(32)
+  LastSent  DateTime? @db.DateTime
+}
+
+model c_imagedata {
+  pdf_url           String?            @db.NVarChar(Max)
+  image_url         String             @db.NVarChar(2000)
+  run_date          DateTime           @db.DateTime
+  instruction_url   String?            @db.NVarChar(Max)
+  success_yn        Boolean?
+  airevisionamount  String?            @db.NVarChar(255)
+  pdfdata_id        Int?
+  id                Int                @id(map: "PK__c_imaged__3213E83F2AE063F8") @default(autoincrement())
+  oneessay          Boolean            @default(false, map: "DF__c_imageda__onees__00DF2177")
+  ocr_text          String?            @db.NVarChar(Max)
+  ai_ocr_text       String?            @db.NVarChar(Max)
+  ai_ocr_text_final String?            @db.NVarChar(Max)
+  imagedata_full_yn Boolean?           @default(false, map: "DF__c_imageda__image__02C769E9")
+  concat_yn         Boolean?           @default(false, map: "DF__c_imageda__conca__03BB8E22")
+  type              String             @default("", map: "DF__c_imagedat__type__7AF13DF7") @db.NVarChar(50)
+  OriginalFileNames String?            @db.NVarChar(Max)
+  studentHomeworkId String?            @db.NVarChar(50)
+  wrong_words_count Int?
+  wrong_words_notes String?            @db.NVarChar(Max)
+  c_pdfdata         c_pdfdata?         @relation(fields: [pdfdata_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c_imagedata_c_pdfdata")
+  c_imagedata_full  c_imagedata_full[] @ignore
+  report_score_c    report_score_c?
+
+  @@index([wrong_words_count], map: "idx_wrong_words")
+  @@index([oneessay, imagedata_full_yn], map: "IX_c_imagedata_oneessay_full_yn")
+  @@index([pdfdata_id, id], map: "IX_c_imagedata_pdfdata_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model c_imagedata_full {
+  id                         Int
+  original_text              String      @db.NVarChar(Max)
+  revised_text               String?     @db.NVarChar(Max)
+  comments                   String?     @db.NVarChar(Max)
+  wordcount_comment          String?     @db.NVarChar(Max)
+  title                      String?     @db.NVarChar(Max)
+  pdf_url                    String      @db.NVarChar(2083)
+  score2                     String?     @db.NVarChar(Max)
+  revised_text2              String?     @db.NVarChar(Max)
+  relevancy                  Int?
+  relevancy_comment          String?     @db.NVarChar(Max)
+  pdfdata_id                 Int?
+  max_page                   Int?
+  insert_type                Int?        @default(1, map: "DF__c_imageda__inser__2B5F6B28")
+  studentHomeworkId          String?     @db.NVarChar(50)
+  last_run_time              DateTime?   @db.DateTime
+  homeworkimages_id          Int?
+  revised_text3              String?     @db.NVarChar(Max)
+  revised_text3_user         String?     @db.NVarChar(Max)
+  relevancy_comment_user     String?     @db.NVarChar(Max)
+  studentshare_yn            Boolean?
+  regenerate_count           Int?        @default(0, map: "DF__c_imageda__regen__3943762B")
+  regenerate_rev_count       Int?        @default(0, map: "DF__c_imageda__regen__3A379A64")
+  regenerate_relevancy_count Int?        @default(0, map: "DF__c_imageda__regen__3B2BBE9D")
+  regenerate_score_count     Int?        @default(0, map: "DF__c_imageda__regen__3C1FE2D6")
+  score2_user                String?     @db.NVarChar(Max)
+  c_imagedata                c_imagedata @relation(fields: [id], references: [id], onUpdate: NoAction, map: "FK_c_imagedata_full_c_imagedata")
+  c_pdfdata                  c_pdfdata?  @relation(fields: [pdfdata_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c_imagedata_full_c_pdfdata")
+
+  @@index([homeworkimages_id], map: "IX_c_imagedata_full_homeworkimages_id")
+  @@index([id], map: "IX_c_imagedata_full_id_score2")
+  @@index([pdfdata_id], map: "IX_c_imagedata_full_pdfdata_id")
+  @@index([relevancy], map: "IX_c_imagedata_full_relevancy")
+  @@ignore
+}
+
+model c_imagedata_full_detail {
+  id                 Int       @id(map: "PK__c_imaged__3213E83FE20417E5")
+  run_date           DateTime? @default(now(), map: "DF__c_imageda__run_d__7869D707") @db.DateTime
+  punctuation_score  Int?
+  punctuation_note   String?   @db.NVarChar(500)
+  organization_score Int?
+  organization_note  String?   @db.NVarChar(500)
+  wrong_words_count  Int?
+  wrong_words_note   String?   @db.NVarChar(Max)
+  wrong_rwords_count Int?
+  wrong_rwords_note  String?   @db.NVarChar(500)
+  last_updated       DateTime? @default(now(), map: "DF__c_imageda__last___795DFB40") @db.DateTime
+}
+
+model c_pdfdata {
+  userdata_id            Int
+  pdf_url                String             @db.NVarChar(Max)
+  score_yn               Boolean?
+  school                 String?            @db.NVarChar(255)
+  title                  String?            @db.NVarChar(Max)
+  airevisionamount       String?            @db.NVarChar(255)
+  titlephotourl          String?            @db.NVarChar(Max)
+  oneessay               Boolean?
+  yn                     Boolean?
+  id                     Int                @id(map: "PK__c_pdfdat__3213E83F95BFA3B3") @default(autoincrement())
+  type                   String             @default("", map: "DF__c_pdfdata__type__79FD19BE") @db.NVarChar(50)
+  schoolclass            String?            @db.NVarChar(510)
+  OriginalFileNames      String?            @db.NVarChar(Max)
+  process_yn             Boolean?           @default(true, map: "DF__c_pdfdata__proce__4EA8A765")
+  instruction_photo_desc String?            @db.NVarChar(Max)
+  wordcount              Int?
+  c_imagedata            c_imagedata[]
+  c_imagedata_full       c_imagedata_full[] @ignore
+
+  @@index([userdata_id], map: "IX_c_pdfdata_userdata_id")
+}
+
+model c_sample_essay {
+  id                     Int       @id(map: "PK__c_sample__3213E83F054503DD") @default(autoincrement())
+  title                  String?
+  titlephotourl          String?
+  instruction_photo_desc String?   @db.NVarChar(Max)
+  wordcount              Int?
+  type                   String?   @db.NVarChar(100)
+  school                 String?   @db.NVarChar(200)
+  essay                  String?   @db.NVarChar(Max)
+  essay2                 String?   @db.NVarChar(Max)
+  essay3                 String?   @db.NVarChar(Max)
+  example_essay_url      String?
+  success_yn             Boolean?  @default(true, map: "DF__c_sample___succe__7F16D496")
+  created_at             DateTime? @default(now(), map: "DF__c_sample___creat__000AF8CF") @db.DateTime
+  updated_at             DateTime? @default(now(), map: "DF__c_sample___updat__00FF1D08") @db.DateTime
+}
+
+model c_userdata {
+  Email                  String    @db.NVarChar(255)
+  Class                  String?   @db.NVarChar(255)
+  Title                  String?   @db.NVarChar(Max)
+  UploadTime             DateTime  @db.DateTime
+  Report                 String?   @db.NVarChar(Max)
+  Reporturl              String?   @db.NVarChar(2048)
+  LastUpdated            DateTime? @db.DateTime
+  fileurl                String?   @db.NVarChar(Max)
+  uniqueid               String?   @db.NVarChar(2048)
+  YN                     Boolean?
+  titlephotourl          String?   @db.NVarChar(Max)
+  AverageScore           Float?
+  airevisionamount       String?   @db.VarChar(255)
+  school                 String?   @db.NVarChar(255)
+  example_essay_url      String?
+  score_yn               Boolean
+  oneessay               Boolean?
+  page_no                Int?
+  revised_page_no        Int?
+  report_yn              Boolean?  @default(false, map: "DF__c_userdat__repor__04AFB25B")
+  id                     Int       @id(map: "PK__c_userda__3213E83F06F26548") @default(autoincrement())
+  type                   String    @default("", map: "DF__c_userdata__type__7908F585") @db.NVarChar(50)
+  OriginalFileNames      String?   @db.NVarChar(Max)
+  ownerId                String?   @db.NVarChar(50)
+  instruction_photo_desc String?   @db.NVarChar(Max)
+  wordcount              Int?
+  last_edit_time         DateTime? @db.DateTime
+
+  @@unique([UploadTime, Email, school], map: "UQ_c_Userdata_UploadTime_Email_School")
+  @@index([uniqueid, ownerId], map: "IX_c_userdata_uniqueid_ownerId")
+}
+
+model ChangeTrackingState {
+  TableName            String  @id(map: "PK__ChangeTr__733652EF42F9725A") @db.VarChar(255)
+  LastProcessedVersion BigInt?
+}
+
+model Comprehension {
+  comprehension_id      Int                     @id(map: "PK__Comprehe__9A016ED67D43DF45") @default(autoincrement())
+  type                  String                  @db.VarChar(16)
+  title                 String                  @db.NVarChar(300)
+  passage_text          String?                 @db.NVarChar(Max)
+  transcript_text       String?                 @db.NVarChar(Max)
+  media_kind            String?                 @db.VarChar(10)
+  media_url             String?
+  media_duration_sec    Int?
+  language              String                  @default("en", map: "DF__Comprehen__langu__4119A21D") @db.VarChar(10)
+  grade                 String?                 @db.VarChar(32)
+  source                String?                 @db.NVarChar(200)
+  version               Int                     @default(1, map: "DF__Comprehen__versi__420DC656")
+  is_active             Boolean                 @default(true, map: "DF__Comprehen__is_ac__4301EA8F")
+  created_at            DateTime                @default(dbgenerated("(sysutcdatetime() AT TIME ZONE 'UTC') AT TIME ZONE 'China Standard Time'"), map: "DF_Comprehension_created_at") @db.DateTimeOffset
+  updated_at            DateTime                @default(dbgenerated("(sysutcdatetime() AT TIME ZONE 'UTC') AT TIME ZONE 'China Standard Time'"), map: "DF_Comprehension_updated_at") @db.DateTimeOffset
+  ComprehensionQuestion ComprehensionQuestion[]
+}
+
+model ComprehensionQuestion {
+  question_id          Int           @id(map: "PK__Comprehe__2EC2154958D247E4") @default(autoincrement())
+  comprehension_id     Int
+  q_index              Int
+  question_text        String        @db.NVarChar(Max)
+  choices_json         String        @db.NVarChar(Max)
+  answer_type          String        @default("single", map: "DF__Comprehen__answe__48BAC3E5") @db.VarChar(10)
+  correct_indices_json String        @db.NVarChar(200)
+  explanation          String?       @db.NVarChar(Max)
+  points               Decimal       @default(1.0, map: "DF__Comprehen__point__4AA30C57") @db.Decimal(5, 2)
+  media_json           String?       @db.NVarChar(Max)
+  created_at           DateTime      @default(dbgenerated("(sysutcdatetime() AT TIME ZONE 'UTC') AT TIME ZONE 'China Standard Time'"), map: "DF_ComprehensionQuestion_created_at") @db.DateTimeOffset
+  updated_at           DateTime      @default(dbgenerated("(sysutcdatetime() AT TIME ZONE 'UTC') AT TIME ZONE 'China Standard Time'"), map: "DF_ComprehensionQuestion_updated_at") @db.DateTimeOffset
+  Comprehension        Comprehension @relation(fields: [comprehension_id], references: [comprehension_id], onDelete: Cascade, onUpdate: NoAction, map: "FK__Comprehen__compr__47C69FAC")
+
+  @@unique([comprehension_id, q_index], map: "IX_ComprehensionQuestion_Comp_QIndex")
+}
+
+model ComprehensionSubmission {
+  submission_id    String   @id(map: "PK__Comprehe__9B5355958279B99C") @db.NVarChar(100)
+  member_id        String   @db.NVarChar(100)
+  email            String   @db.NVarChar(255)
+  comprehension_id Int
+  submitted_at     DateTime @default(dbgenerated("getutcdate()"), map: "DF__Comprehen__submi__53385258")
+  ip_address       String?  @db.NVarChar(50)
+  user_agent       String?  @db.NVarChar(500)
+  answers_json     String   @db.NVarChar(Max)
+  results_json     String   @db.NVarChar(Max)
+  total_score      Decimal  @db.Decimal(10, 2)
+  max_score        Decimal  @db.Decimal(10, 2)
+  percentage       Int
+  grade            String   @db.NVarChar(2)
+  correct_count    Int
+  incorrect_count  Int
+  total_questions  Int
+
+  @@index([email], map: "IX_Email")
+  @@index([member_id, comprehension_id, submitted_at(sort: Desc)], map: "IX_MemberComprehension")
+  @@index([submitted_at(sort: Desc)], map: "IX_SubmittedAt")
+}
+
+model deepseek_all_in_one_table {
+  id                               Int       @id(map: "PK__deepseek__3213E83FA9008C7F") @default(autoincrement())
+  id_from                          Int?
+  uniqueid                         String?   @db.NVarChar(Max)
+  email                            String?   @db.NVarChar(Max)
+  pdf_url                          String?   @db.NVarChar(Max)
+  class                            String?   @db.NVarChar(Max)
+  title                            String?   @db.NVarChar(Max)
+  original_text                    String?   @db.NVarChar(Max)
+  total_score                      Decimal?  @db.Decimal(4, 1)
+  total_score_max                  Decimal?  @db.Decimal(4, 1)
+  content_score                    Decimal?  @db.Decimal(4, 1)
+  content_score_max                Decimal?  @db.Decimal(4, 1)
+  language_score                   Decimal?  @db.Decimal(4, 1)
+  language_score_max               Decimal?  @db.Decimal(4, 1)
+  grammar_score                    Decimal?  @db.Decimal(4, 1)
+  grammar_score_max                Decimal?  @db.Decimal(4, 1)
+  organization_score               Decimal?  @db.Decimal(4, 1)
+  organization_score_max           Decimal?  @db.Decimal(4, 1)
+  word_count_score                 Decimal?  @db.Decimal(4, 1)
+  word_count_score_max             Decimal?  @db.Decimal(4, 1)
+  connectives_count                Int?
+  connectives_rating               String?   @db.NVarChar(50)
+  connectives_examples             String?   @db.NVarChar(Max)
+  connectives_corrected            String?   @db.NVarChar(Max)
+  tense_count                      Int?
+  tense_rating                     String?   @db.NVarChar(50)
+  tense_examples                   String?   @db.NVarChar(Max)
+  tense_corrected                  String?   @db.NVarChar(Max)
+  direct_speech_count              Int?
+  direct_speech_rating             String?   @db.NVarChar(50)
+  direct_speech_examples           String?   @db.NVarChar(Max)
+  direct_speech_corrected          String?   @db.NVarChar(Max)
+  reported_speech_count            Int?
+  reported_speech_rating           String?   @db.NVarChar(50)
+  reported_speech_examples         String?   @db.NVarChar(Max)
+  reported_speech_corrected        String?   @db.NVarChar(Max)
+  punctuation_case_count           Int?
+  punctuation_case_rating          String?   @db.NVarChar(50)
+  punctuation_case_examples        String?   @db.NVarChar(Max)
+  punctuation_case_corrected       String?   @db.NVarChar(Max)
+  gerunds_infinitives_count        Int?
+  gerunds_infinitives_rating       String?   @db.NVarChar(50)
+  gerunds_infinitives_examples     String?   @db.NVarChar(Max)
+  gerunds_infinitives_corrected    String?   @db.NVarChar(Max)
+  modal_verbs_count                Int?
+  modal_verbs_rating               String?   @db.NVarChar(50)
+  modal_verbs_examples             String?   @db.NVarChar(Max)
+  modal_verbs_corrected            String?   @db.NVarChar(Max)
+  subject_verb_agreement_count     Int?
+  subject_verb_agreement_rating    String?   @db.NVarChar(50)
+  subject_verb_agreement_examples  String?   @db.NVarChar(Max)
+  subject_verb_agreement_corrected String?   @db.NVarChar(Max)
+  prepositions_count               Int?
+  prepositions_rating              String?   @db.NVarChar(50)
+  prepositions_examples            String?   @db.NVarChar(Max)
+  prepositions_corrected           String?   @db.NVarChar(Max)
+  strengths                        String?   @db.NVarChar(Max)
+  weaknesses                       String?   @db.NVarChar(Max)
+  inserted_at                      DateTime? @default(dbgenerated("getutcdate()"), map: "DF__deepseek___inser__54968AE5")
+}
+
+model deepseek_responses {
+  id                Int       @id(map: "PK__deepseek__3213E83F80369F76") @default(autoincrement())
+  original_text     String    @db.NVarChar(Max)
+  deepseek_response String    @db.NVarChar(Max)
+  created_at        DateTime? @default(now(), map: "DF__deepseek___creat__3BFFE745") @db.DateTime
+  pdf_url           String?   @db.NVarChar(500)
+  school            String?   @db.NVarChar(100)
+  id_from           Int?
+}
+
+model deepseek_responses_c {
+  id                Int     @id(map: "PK__deepseek__3213E83F0371CF9A") @default(autoincrement())
+  id_from           String? @db.NVarChar(255)
+  pdf_url           String? @db.NVarChar(Max)
+  school            String? @db.NVarChar(255)
+  title             String? @db.NVarChar(255)
+  original_text     String? @db.NVarChar(Max)
+  deepseek_response String? @db.NVarChar(Max)
+}
+
+model deepseek_tmp_test_table {
+  id                               Int       @id(map: "PK__deepseek__3213E83F6864B8DF") @default(autoincrement())
+  id_from                          Int?      @unique(map: "UQ_deepseek_tmp_test_table_id_from")
+  uniqueid                         String?   @db.NVarChar(Max)
+  email                            String?   @db.NVarChar(Max)
+  pdf_url                          String?   @db.NVarChar(Max)
+  class                            String?   @db.NVarChar(Max)
+  title                            String?   @db.NVarChar(Max)
+  original_text                    String?   @db.NVarChar(Max)
+  total_score                      Decimal?  @db.Decimal(4, 1)
+  total_score_max                  Decimal?  @db.Decimal(4, 1)
+  content_score                    Decimal?  @db.Decimal(4, 1)
+  content_score_max                Decimal?  @db.Decimal(4, 1)
+  language_score                   Decimal?  @db.Decimal(4, 1)
+  language_score_max               Decimal?  @db.Decimal(4, 1)
+  grammar_score                    Decimal?  @db.Decimal(4, 1)
+  grammar_score_max                Decimal?  @db.Decimal(4, 1)
+  organization_score               Decimal?  @db.Decimal(4, 1)
+  organization_score_max           Decimal?  @db.Decimal(4, 1)
+  word_count_score                 Decimal?  @db.Decimal(4, 1)
+  word_count_score_max             Decimal?  @db.Decimal(4, 1)
+  connectives_count                Int?
+  connectives_rating               String?   @db.NVarChar(50)
+  connectives_examples             String?   @db.NVarChar(Max)
+  connectives_corrected            String?   @db.NVarChar(Max)
+  tense_count                      Int?
+  tense_rating                     String?   @db.NVarChar(50)
+  tense_examples                   String?   @db.NVarChar(Max)
+  tense_corrected                  String?   @db.NVarChar(Max)
+  direct_speech_count              Int?
+  direct_speech_rating             String?   @db.NVarChar(50)
+  direct_speech_examples           String?   @db.NVarChar(Max)
+  direct_speech_corrected          String?   @db.NVarChar(Max)
+  reported_speech_count            Int?
+  reported_speech_rating           String?   @db.NVarChar(50)
+  reported_speech_examples         String?   @db.NVarChar(Max)
+  reported_speech_corrected        String?   @db.NVarChar(Max)
+  punctuation_case_count           Int?
+  punctuation_case_rating          String?   @db.NVarChar(50)
+  punctuation_case_examples        String?   @db.NVarChar(Max)
+  punctuation_case_corrected       String?   @db.NVarChar(Max)
+  gerunds_infinitives_count        Int?
+  gerunds_infinitives_rating       String?   @db.NVarChar(50)
+  gerunds_infinitives_examples     String?   @db.NVarChar(Max)
+  gerunds_infinitives_corrected    String?   @db.NVarChar(Max)
+  modal_verbs_count                Int?
+  modal_verbs_rating               String?   @db.NVarChar(50)
+  modal_verbs_examples             String?   @db.NVarChar(Max)
+  modal_verbs_corrected            String?   @db.NVarChar(Max)
+  subject_verb_agreement_count     Int?
+  subject_verb_agreement_rating    String?   @db.NVarChar(50)
+  subject_verb_agreement_examples  String?   @db.NVarChar(Max)
+  subject_verb_agreement_corrected String?   @db.NVarChar(Max)
+  prepositions_count               Int?
+  prepositions_rating              String?   @db.NVarChar(50)
+  prepositions_examples            String?   @db.NVarChar(Max)
+  prepositions_corrected           String?   @db.NVarChar(Max)
+  word_form_or_usage_count         Int?
+  word_form_or_usage_rating        String?   @db.NVarChar(50)
+  word_form_or_usage_examples      String?   @db.NVarChar(Max)
+  word_form_or_usage_corrected     String?   @db.NVarChar(Max)
+  strengths                        String?   @db.NVarChar(Max)
+  weaknesses                       String?   @db.NVarChar(Max)
+  inserted_at                      DateTime? @default(dbgenerated("getutcdate()"), map: "DF__deepseek___inser__5E1FF51F")
+}
+
+model grammar_analysis {
+  id                   Int            @id(map: "PK__grammar___3213E83F4152181A")
+  total_errors         Int?           @default(0, map: "DF__grammar_a__total__2FBA0BF1")
+  grammar_count        Int?           @default(0, map: "DF__grammar_a__gramm__30AE302A")
+  grammar_list         String?        @db.NVarChar(Max)
+  typos_count          Int?           @default(0, map: "DF__grammar_a__typos__31A25463")
+  typos_list           String?        @db.NVarChar(Max)
+  punctuation_count    Int?           @default(0, map: "DF__grammar_a__punct__3296789C")
+  punctuation_list     String?        @db.NVarChar(Max)
+  confused_words_count Int?           @default(0, map: "DF__grammar_a__confu__338A9CD5")
+  confused_words_list  String?        @db.NVarChar(Max)
+  semantics_count      Int?           @default(0, map: "DF__grammar_a__seman__347EC10E")
+  semantics_list       String?        @db.NVarChar(Max)
+  compounding_count    Int?           @default(0, map: "DF__grammar_a__compo__3572E547")
+  compounding_list     String?        @db.NVarChar(Max)
+  misc_count           Int?           @default(0, map: "DF__grammar_a__misc___36670980")
+  misc_list            String?        @db.NVarChar(Max)
+  analyzed_at          DateTime?      @default(now(), map: "DF__grammar_a__analy__375B2DB9") @db.DateTime
+  imagedata_full       imagedata_full @relation(fields: [id], references: [id], onUpdate: NoAction, map: "FK_grammar_imagedata")
+
+  @@index([analyzed_at], map: "IX_grammar_analysis_analyzed_at")
+}
+
+model HomeworkImages {
+  id                Int     @id(map: "PK_HomeworkImages") @default(autoincrement())
+  studentHomeworkId String  @db.NVarChar(64)
+  homeworkId        String? @db.NVarChar(64)
+  studentId         String? @db.NVarChar(64)
+  teacherId         String? @db.NVarChar(64)
+  email             String? @db.NVarChar(256)
+  school            String? @db.NVarChar(200)
+  createdAt         String? @db.NVarChar(19)
+  image_array       String? @db.NVarChar(Max)
+  pdf_array         String? @db.NVarChar(Max)
+  extract_text      String? @db.NVarChar(Max)
+  essay_text        String? @db.NVarChar(Max)
+  comments_json     String? @db.NVarChar(Max)
+  suggestions_json  String? @db.NVarChar(Max)
+  revision_text     String? @db.NVarChar(Max)
+  revision_mode     String? @db.NVarChar(32)
+  report_url        String? @db.NVarChar(400)
+  report_time       String? @db.NVarChar(19)
+  attempt           Int?
+  eaasy_language    String? @db.NVarChar(32)
+
+  @@index([homeworkId], map: "IX_HomeworkImages_homeworkId")
+  @@index([revision_mode, homeworkId, eaasy_language], map: "IX_HomeworkImages_revmode_hwid_lang")
+  @@index([studentHomeworkId, attempt], map: "IX_HomeworkImages_StudentAttempt")
+  @@index([studentHomeworkId, attempt], map: "IX_HomeworkImages_StudentHomeworkId_Attempt")
+  @@index([studentId], map: "IX_HomeworkImages_studentId")
+  @@index([teacherId], map: "IX_HomeworkImages_teacherId")
+}
+
+model imagedata {
+  id                Int             @id(map: "PK__imagedat__3213E83FDADD58A7") @default(autoincrement())
+  pdf_url           String?         @db.NVarChar(Max)
+  image_url         String          @db.NVarChar(2000)
+  run_date          DateTime        @db.DateTime
+  instruction_url   String?         @db.NVarChar(Max)
+  success_yn        Boolean?
+  airevisionamount  String?         @db.NVarChar(255)
+  pdfdata_id        Int?
+  count_image_url   Int?            @default(0, map: "DF__imagedata__count__50FB042B")
+  type              String          @default("", map: "DF__imagedata__type__67DE6983") @db.NVarChar(50)
+  OriginalFileNames String?         @db.NVarChar(Max)
+  page_no           Int?
+  studentHomeworkId String?         @db.NVarChar(50)
+  homeworkimages_id Int?
+  pdfdata           pdfdata?        @relation(fields: [pdfdata_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_imagedata_pdfdata")
+  imagedata_full    imagedata_full?
+  imagedata_ocr     imagedata_ocr[]
+
+  @@index([pdfdata_id, id], map: "idx_imagedata_pdfdata_id")
+  @@index([homeworkimages_id], map: "IX_imagedata_homeworkimages_id")
+  @@index([pdfdata_id, page_no], map: "IX_imagedata_page_match")
+  @@index([pdfdata_id], map: "IX_imagedata_pdfdata_id")
+}
+
+model imagedata_archive {
+  id                Int      @id(map: "PK__imagedat__3213E83F75AC6219") @default(autoincrement())
+  pdf_url           String?  @db.NVarChar(Max)
+  image_url         String   @db.NVarChar(2000)
+  run_date          DateTime @db.DateTime
+  instruction_url   String?  @db.NVarChar(Max)
+  success_yn        Boolean?
+  airevisionamount  String?  @db.NVarChar(255)
+  pdfdata_id        Int?
+  count_image_url   Int?
+  type              String   @db.NVarChar(50)
+  OriginalFileNames String?  @db.NVarChar(Max)
+  page_no           Int?
+  studentHomeworkId String?  @db.NVarChar(50)
+  homeworkimages_id Int?
+}
+
+model imagedata_full {
+  id                         Int               @id(map: "PK_imagedata_full")
+  original_text              String            @db.NVarChar(Max)
+  revised_text               String?           @db.NVarChar(Max)
+  wordcount_comment          String?           @db.NVarChar(Max)
+  org_score                  String?           @db.NVarChar(Max)
+  title                      String?           @db.NVarChar(Max)
+  pdf_url                    String            @db.NVarChar(2083)
+  score2                     String?           @default("", map: "DF_imagedata_full_score2") @db.NVarChar(Max)
+  revised_text2              String?           @db.NVarChar(Max)
+  relevancy                  String?           @db.NVarChar(Max)
+  relevancy_comment          String?           @db.NVarChar(Max)
+  pdfdata_id                 Int?
+  insert_type                Int?              @default(1, map: "DF__imagedata__inser__2A6B46EF")
+  studentHomeworkId          String?           @db.NVarChar(50)
+  last_run_time              DateTime?         @db.DateTime
+  homeworkimages_id          Int?
+  revised_text3              String?           @db.NVarChar(Max)
+  studentshare_yn            Boolean           @default(false, map: "DF__imagedata__stude__1F83A428")
+  score2_user                String?           @db.NVarChar(Max)
+  revised_text3_user         String?           @db.NVarChar(Max)
+  relevancy_comment_user     String?           @db.NVarChar(Max)
+  regenerate_count           Int?              @default(0, map: "DF__imagedata__regen__2A01329B")
+  regenerate_rev_count       Int?              @default(0, map: "DF__imagedata__regen__2AF556D4")
+  regenerate_relevancy_count Int?              @default(0, map: "DF__imagedata__regen__2BE97B0D")
+  regenerate_score_count     Int?              @default(0, map: "DF__imagedata__regen__2CDD9F46")
+  grammar_analysis           grammar_analysis?
+  imagedata                  imagedata         @relation(fields: [id], references: [id], onUpdate: NoAction, map: "FK_imagedata_full_imagedata")
+  pdfdata                    pdfdata?          @relation(fields: [pdfdata_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_imagedata_full_pdfdata")
+  report_detail              report_detail?
+  report_score               report_score[]    @ignore
+
+  @@index([homeworkimages_id], map: "IX_imagedata_full_homeworkimages_id")
+  @@index([id], map: "IX_imagedata_full_id")
+  @@index([pdfdata_id], map: "IX_imagedata_full_pdfdata_id")
+}
+
+model imagedata_full_archive {
+  id                     Int       @id(map: "PK__imagedat__3213E83F439B6B79")
+  original_text          String    @db.NVarChar(Max)
+  revised_text           String?   @db.NVarChar(Max)
+  wordcount_comment      String?   @db.NVarChar(Max)
+  org_score              String?   @db.NVarChar(Max)
+  title                  String?   @db.NVarChar(Max)
+  pdf_url                String    @db.NVarChar(2083)
+  score2                 String?   @db.NVarChar(Max)
+  revised_text2          String?   @db.NVarChar(Max)
+  relevancy              String?   @db.NVarChar(Max)
+  relevancy_comment      String?   @db.NVarChar(Max)
+  pdfdata_id             Int?
+  insert_type            Int?
+  studentHomeworkId      String?   @db.NVarChar(50)
+  last_run_time          DateTime? @db.DateTime
+  homeworkimages_id      Int?
+  revised_text3          String?   @db.NVarChar(Max)
+  studentshare_yn        Boolean
+  score2_user            String?   @db.NVarChar(Max)
+  revised_text3_user     String?   @db.NVarChar(Max)
+  relevancy_comment_user String?   @db.NVarChar(Max)
+}
+
+model imagedata_ocr {
+  id            Int        @id(map: "PK__imagedat__3213E83F9009E6CD") @default(autoincrement())
+  pdfdata_id    Int
+  image_url     String?    @db.NVarChar(Max)
+  ocr_text      String?    @db.NVarChar(Max)
+  first_page_yn Boolean?
+  student_name  String?    @db.NVarChar(100)
+  class_name    String?    @db.NVarChar(100)
+  class_no      String?    @db.NVarChar(20)
+  imagedata_id  Int?
+  page_no       Int?
+  last_run_time DateTime?  @db.DateTime
+  imagedata     imagedata? @relation(fields: [imagedata_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_imagedata_ocr_imagedata")
+  pdfdata       pdfdata    @relation(fields: [pdfdata_id], references: [id], onUpdate: NoAction, map: "FK_imagedata_ocr_pdfdata")
+
+  @@index([imagedata_id], map: "IX_imagedata_ocr_imagedata_id")
+  @@index([pdfdata_id], map: "IX_imagedata_ocr_pdfdata_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model imagedata_ocr_archive {
+  id            Int      @default(autoincrement())
+  pdfdata_id    Int
+  image_url     String?  @db.NVarChar(Max)
+  ocr_text      String?  @db.NVarChar(Max)
+  first_page_yn Boolean?
+  student_name  String?  @db.NVarChar(100)
+  class_name    String?  @db.NVarChar(100)
+  class_no      String?  @db.NVarChar(20)
+  imagedata_id  Int?
+  page_no       Int?
+
+  @@ignore
+}
+
+model pdfdata {
+  id                        Int              @id(map: "PK__pdfdata__3213E83F5692D3DC") @default(autoincrement())
+  userdata_id               Int
+  pdf_url                   String           @db.NVarChar(Max)
+  score_yn                  Boolean?
+  school                    String?          @db.NVarChar(255)
+  title                     String?          @db.NVarChar(Max)
+  airevisionamount          String?          @db.NVarChar(255)
+  titlephotourl             String?          @db.NVarChar(Max)
+  oneessay                  Boolean?
+  yn                        Boolean?
+  type                      String           @default("", map: "DF__pdfdata__type__66EA454A") @db.NVarChar(50)
+  OriginalFileNames         String?          @db.NVarChar(Max)
+  schoolclass               String?          @db.NVarChar(50)
+  instruction_photo_desc    String?          @db.NVarChar(Max)
+  instruction_photo_summary String?          @db.NVarChar(Max)
+  wordcount                 Int?
+  imagedata                 imagedata[]
+  imagedata_full            imagedata_full[]
+  imagedata_ocr             imagedata_ocr[]
+  userdata                  userdata         @relation(fields: [userdata_id], references: [id], onUpdate: NoAction, map: "FK_pdfdata_userdata")
+
+  @@index([yn, id], map: "idx_pdfdata_yn_id")
+  @@index([userdata_id], map: "IX_pdfdata_userdata_id")
+}
+
+model pronunciation_assessment {
+  id                      String    @id(map: "PK__pronunci__3213E83F4E984E32") @db.NVarChar(64)
+  session_id              String    @db.NVarChar(64)
+  reference_text          String?   @db.NVarChar(Max)
+  recognized_text         String?   @db.NVarChar(Max)
+  language_input          String?   @db.NVarChar(16)
+  language                String?   @db.NVarChar(32)
+  mode                    Int?
+  audio_filename          String?   @db.NVarChar(512)
+  audio_size_bytes        BigInt?
+  accuracy_score          Float?
+  completeness_score      Float?
+  fluency_score           Float?
+  pronunciation_score     Float?
+  prosody_score           Float?
+  mispronunciations_count Int?
+  omissions_count         Int?
+  insertions_count        Int?
+  unexpected_breaks_count Int?
+  missing_breaks_count    Int?
+  monotone_count          Int?
+  enable_prosody          Boolean?
+  enable_miscue           Boolean?
+  status                  String?   @db.NVarChar(32)
+  processing_time_ms      Int?
+  raw_response_json       String?   @db.NVarChar(Max)
+  user_id                 String?   @db.NVarChar(64)
+  school                  String?   @db.NVarChar(128)
+  email                   String?   @db.NVarChar(256)
+  mispronounced_json      String?   @db.NVarChar(Max)
+  mispronounced_count     Int?
+  content_strengths_json  String?   @db.NVarChar(Max)
+  content_weaknesses_json String?   @db.NVarChar(Max)
+  content_summary         String?   @db.NVarChar(Max)
+  content_topic_relevance Int?      @db.TinyInt
+  content_vocabulary      Int?      @db.TinyInt
+  content_grammar         Int?      @db.TinyInt
+  content_organization    Int?      @db.TinyInt
+  content_coherence       Int?      @db.TinyInt
+  audio_blob_url          String?   @db.NVarChar(512)
+  create_time_client_utc  DateTime?
+  create_time_server_utc  DateTime  @default(dbgenerated("sysutcdatetime()"), map: "DF_pronassess_create_time_server_utc")
+  create_time_client_cn   DateTime?
+  audio_duration_ms       Int?
+  overall_score           Int?      @db.TinyInt
+}
+
+model report_detail {
+  id_from                       Int            @id(map: "PK__report_d__619727998C7D62C5")
+  connectives_count             Int?
+  connectives_rating            String?        @db.NVarChar(50)
+  tense_count                   Int?
+  tense_rating                  String?        @db.NVarChar(50)
+  direct_speech_count           Int?
+  direct_speech_rating          String?        @db.NVarChar(50)
+  reported_speech_count         Int?
+  reported_speech_rating        String?        @db.NVarChar(50)
+  punctuation_case_count        Int?
+  punctuation_case_rating       String?        @db.NVarChar(50)
+  gerunds_infinitives_count     Int?
+  gerunds_infinitives_rating    String?        @db.NVarChar(50)
+  modal_verbs_count             Int?
+  modal_verbs_rating            String?        @db.NVarChar(50)
+  subject_verb_agreement_count  Int?
+  subject_verb_agreement_rating String?        @db.NVarChar(50)
+  prepositions_count            Int?
+  prepositions_rating           String?        @db.NVarChar(50)
+  errors_example                String?        @db.NVarChar(Max)
+  corrected_example             String?        @db.NVarChar(Max)
+  inserted_at                   DateTime?      @default(dbgenerated("getutcdate()"), map: "DF__report_de__inser__0539C240")
+  connectives_total             Int?
+  tense_total                   Int?
+  direct_speech_total           Int?
+  reported_speech_total         Int?
+  punctuation_case_total        Int?
+  gerunds_infinitives_total     Int?
+  modal_verbs_total             Int?
+  subject_verb_agreement_total  Int?
+  prepositions_total            Int?
+  misspelling_count             Int?
+  imagedata_full                imagedata_full @relation(fields: [id_from], references: [id], onUpdate: NoAction, map: "FK_ReportDetail_ImageData")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model report_detail_archive {
+  id_from                       Int
+  connectives_count             Int?
+  connectives_rating            String?   @db.NVarChar(50)
+  tense_count                   Int?
+  tense_rating                  String?   @db.NVarChar(50)
+  direct_speech_count           Int?
+  direct_speech_rating          String?   @db.NVarChar(50)
+  reported_speech_count         Int?
+  reported_speech_rating        String?   @db.NVarChar(50)
+  punctuation_case_count        Int?
+  punctuation_case_rating       String?   @db.NVarChar(50)
+  gerunds_infinitives_count     Int?
+  gerunds_infinitives_rating    String?   @db.NVarChar(50)
+  modal_verbs_count             Int?
+  modal_verbs_rating            String?   @db.NVarChar(50)
+  subject_verb_agreement_count  Int?
+  subject_verb_agreement_rating String?   @db.NVarChar(50)
+  prepositions_count            Int?
+  prepositions_rating           String?   @db.NVarChar(50)
+  errors_example                String?   @db.NVarChar(Max)
+  corrected_example             String?   @db.NVarChar(Max)
+  inserted_at                   DateTime?
+  connectives_total             Int?
+  tense_total                   Int?
+  direct_speech_total           Int?
+  reported_speech_total         Int?
+  punctuation_case_total        Int?
+  gerunds_infinitives_total     Int?
+  modal_verbs_total             Int?
+  subject_verb_agreement_total  Int?
+  prepositions_total            Int?
+  misspelling_count             Int?
+
+  @@ignore
+}
+
+model report_offline {
+  id            Int      @id(map: "PK__report_o__3213E83F7DF222A4")
+  file_name     String?  @db.NVarChar(255)
+  school        String?  @db.NVarChar(255)
+  class_no      String?  @db.NVarChar(50)
+  student_no    String?  @db.NVarChar(50)
+  title         String?  @db.NVarChar(Max)
+  original_text String?  @db.NVarChar(Max)
+  comments      String?  @db.NVarChar(Max)
+  total_score   Decimal? @db.Decimal(4, 1)
+  content       Decimal? @db.Decimal(4, 1)
+  language      Decimal? @db.Decimal(4, 1)
+  format        Decimal? @db.Decimal(4, 1)
+  organization  Decimal? @db.Decimal(4, 1)
+  map_id        Int?
+
+  @@index([map_id], map: "IX_report_offline_map_id")
+}
+
+model report_offline_c {
+  id            Int      @id(map: "PK__report_o__3213E83F3272730A")
+  file_name     String   @db.NVarChar(255)
+  school        String?  @db.NVarChar(Max)
+  class_no      String?  @db.NVarChar(Max)
+  student_no    String?  @db.NVarChar(Max)
+  title         String?  @db.NVarChar(Max)
+  original_text String?  @db.NVarChar(Max)
+  comments      String?  @db.NVarChar(Max)
+  total_score   Decimal? @db.Decimal(4, 1)
+  content       Decimal? @db.Decimal(4, 1)
+  language      Decimal? @db.Decimal(4, 1)
+  grammar       Decimal? @db.Decimal(4, 1)
+  wording       Decimal? @db.Decimal(4, 1)
+  organization  Decimal? @db.Decimal(4, 1)
+  punctuation   Decimal? @db.Decimal(4, 1)
+  misspelling   Decimal? @db.Decimal(4, 1)
+  map_id        Int?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model report_score {
+  id                     Int?
+  score2                 String?         @db.NVarChar(Max)
+  total_score            Decimal?        @db.Decimal(4, 1)
+  total_score_max        Decimal?        @db.Decimal(4, 1)
+  content_score          Decimal?        @db.Decimal(4, 1)
+  content_score_max      Decimal?        @db.Decimal(4, 1)
+  language_score         Decimal?        @db.Decimal(4, 1)
+  language_score_max     Decimal?        @db.Decimal(4, 1)
+  grammar_score          Decimal?        @db.Decimal(4, 1)
+  grammar_score_max      Decimal?        @db.Decimal(4, 1)
+  organization_score     Decimal?        @db.Decimal(4, 1)
+  organization_score_max Decimal?        @db.Decimal(4, 1)
+  word_count_score       Decimal?        @db.Decimal(4, 1)
+  word_count_score_max   Decimal?        @db.Decimal(4, 1)
+  strengths              String?         @db.NVarChar(Max)
+  weaknesses             String?         @db.NVarChar(Max)
+  inserted_at            DateTime?       @default(dbgenerated("getutcdate()"), map: "DF__report_sc__inser__147C05D0")
+  school                 String?         @db.NVarChar(Max)
+  schoolclass            String?         @db.NVarChar(Max)
+  classno                Int?
+  image_url              String?         @db.NVarChar(Max)
+  misspelling            Int?
+  report_url             String?         @db.NVarChar(Max)
+  pdf_url                String?         @db.NVarChar(Max)
+  imagedata_full         imagedata_full? @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ReportScore_ImageData")
+
+  @@index([id], map: "idx_report_score_id")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model report_score_archive {
+  id                     Int?
+  score2                 String?   @db.NVarChar(Max)
+  total_score            Decimal?  @db.Decimal(4, 1)
+  total_score_max        Decimal?  @db.Decimal(4, 1)
+  content_score          Decimal?  @db.Decimal(4, 1)
+  content_score_max      Decimal?  @db.Decimal(4, 1)
+  language_score         Decimal?  @db.Decimal(4, 1)
+  language_score_max     Decimal?  @db.Decimal(4, 1)
+  grammar_score          Decimal?  @db.Decimal(4, 1)
+  grammar_score_max      Decimal?  @db.Decimal(4, 1)
+  organization_score     Decimal?  @db.Decimal(4, 1)
+  organization_score_max Decimal?  @db.Decimal(4, 1)
+  word_count_score       Decimal?  @db.Decimal(4, 1)
+  word_count_score_max   Decimal?  @db.Decimal(4, 1)
+  strengths              String?   @db.NVarChar(Max)
+  weaknesses             String?   @db.NVarChar(Max)
+  inserted_at            DateTime?
+  school                 String?   @db.NVarChar(Max)
+  schoolclass            String?   @db.NVarChar(Max)
+  classno                Int?
+  image_url              String?   @db.NVarChar(Max)
+  misspelling            Int?
+  report_url             String?   @db.NVarChar(Max)
+  pdf_url                String?   @db.NVarChar(Max)
+
+  @@ignore
+}
+
+model report_score_c {
+  id                     Int         @id(map: "PK_report_score_c")
+  score2                 String?     @db.NVarChar(Max)
+  total_score            Decimal?    @db.Decimal(4, 1)
+  total_score_max        Decimal?    @db.Decimal(4, 1)
+  content_score          Decimal?    @db.Decimal(4, 1)
+  content_score_max      Decimal?    @db.Decimal(4, 1)
+  language_score         Decimal?    @db.Decimal(4, 1)
+  language_score_max     Decimal?    @db.Decimal(4, 1)
+  grammar_score          Decimal?    @db.Decimal(4, 1)
+  grammar_score_max      Decimal?    @db.Decimal(4, 1)
+  wording_score          Decimal?    @db.Decimal(4, 1)
+  wording_score_max      Decimal?    @db.Decimal(4, 1)
+  organization_score     Decimal?    @db.Decimal(4, 1)
+  organization_score_max Decimal?    @db.Decimal(4, 1)
+  punctuation_score      Decimal?    @db.Decimal(4, 1)
+  punctuation_score_max  Decimal?    @db.Decimal(4, 1)
+  misspelling_score      Decimal?    @db.Decimal(4, 1)
+  misspelling_score_max  Decimal?    @db.Decimal(4, 1)
+  word_count_score       Decimal?    @db.Decimal(4, 1)
+  word_count_score_max   Decimal?    @db.Decimal(4, 1)
+  word_count             Decimal?    @db.Decimal(4, 1)
+  strengths              String?     @db.NVarChar(Max)
+  weaknesses             String?     @db.NVarChar(Max)
+  inserted_at            DateTime    @default(dbgenerated("getutcdate()"), map: "DF__report_sc__inser__5C02A283")
+  school                 String?     @db.NVarChar(255)
+  schoolclass            String?     @db.NVarChar(255)
+  classno                Int?
+  image_url              String?     @db.VarChar(255)
+  rhetoric_score         Decimal?    @db.Decimal(5, 1)
+  rhetoric_score_max     Decimal?    @db.Decimal(5, 1)
+  pdf_url                String?     @db.NVarChar(200)
+  c_imagedata            c_imagedata @relation(fields: [id], references: [id], onUpdate: NoAction, map: "FK_ReportScoreC_CImageData")
+}
+
+model sample_essay {
+  id                Int      @id(map: "PK__sample_e__3213E83F31772D9F") @default(autoincrement())
+  title             String?  @db.NVarChar(Max)
+  titlephotourl     String?  @db.NVarChar(Max)
+  essay             String?  @db.NVarChar(Max)
+  example_essay_url String?  @db.NVarChar(Max)
+  success_yn        Boolean? @default(true, map: "DF__sample_es__succe__56E8E7AB")
+  phrases           String?  @db.NVarChar(Max)
+  words             String?  @db.NVarChar(Max)
+  photo_desc        String?  @db.NVarChar(Max)
+  essay2            String?  @db.NVarChar(Max)
+  essay3            String?  @db.NVarChar(Max)
+  phrases2          String?  @db.NVarChar(Max)
+  phrases3          String?  @db.NVarChar(Max)
+  words2            String?  @db.NVarChar(Max)
+  words3            String?  @db.NVarChar(Max)
+}
+
+model teacherAssignment {
+  rowId                  Int       @default(autoincrement())
+  ID                     String    @id(map: "PK__teacherA__3214EC2784516E64") @db.NVarChar(50)
+  oralQuestionID         String?   @db.NVarChar(50)
+  type                   Int?
+  memberID               String?   @db.NVarChar(50)
+  Status                 Int       @default(1, map: "DF__teacherAs__Statu__09946309") @db.TinyInt
+  Class                  String?   @db.NVarChar(20)
+  Deadline               DateTime? @db.Date
+  display_text           String?   @db.NVarChar(Max)
+  photo                  String?   @db.NVarChar(Max)
+  description            String?   @db.NVarChar(Max)
+  assistantId            String?   @db.NVarChar(50)
+  CancelMessage          String?   @db.NVarChar(Max)
+  CreatedDate            DateTime?
+  Owner                  String?   @db.NVarChar(50)
+  UpdatedDate            DateTime?
+  Subject                String?   @db.NVarChar(255)
+  richcontent            String?   @db.NVarChar(Max)
+  EssayLanguage          String?   @db.NVarChar(10)
+  EssayTitle             String?   @db.NVarChar(500)
+  EssayInstructions      String?   @db.NVarChar(Max)
+  EssayUploadImages      String?   @db.NVarChar(Max)
+  TypeOfWriting          String?   @db.NVarChar(50)
+  AIRevisionLevel        String?   @db.NVarChar(20)
+  RevisionMode           String?   @db.NVarChar(50)
+  IncludePointsInReports Boolean?
+  EssayOverallReport     String?   @db.NVarChar(Max)
+  Mode                   String?   @db.NVarChar(50)
+  Language               String?   @db.NVarChar(10)
+  ComprehensionId        String?   @db.NVarChar(50)
+  studentcheckbox        Boolean   @default(true, map: "DF__teacherAs__stude__1CA7377D")
+  essaycheckbox          Boolean   @default(true, map: "DF__teacherAs__essay__1D9B5BB6")
+
+  @@index([ID], map: "IX_teacherAssignment_ID")
+  @@index([memberID], map: "IX_teacherAssignment_memberID")
+  @@index([Status], map: "IX_teacherAssignment_Status")
+}
+
+model userdata {
+  Email                     String    @db.NVarChar(255)
+  Class                     String?   @db.NVarChar(255)
+  Title                     String?   @db.NVarChar(Max)
+  UploadTime                DateTime  @db.DateTime
+  Report                    String?   @db.NVarChar(Max)
+  Reporturl                 String?   @db.NVarChar(2048)
+  LastUpdated               DateTime? @db.DateTime
+  fileurl                   String?   @db.NVarChar(Max)
+  uniqueid                  String?   @db.NVarChar(2048)
+  YN                        Boolean?
+  titlephotourl             String?   @db.NVarChar(Max)
+  AverageScore              Float?
+  airevisionamount          String?   @db.VarChar(255)
+  school                    String?   @db.NVarChar(255)
+  example_essay_url         String?   @db.NVarChar(255)
+  score_yn                  Boolean   @default(true, map: "DF__userdata__score___57DD0BE4")
+  oneessay                  Boolean?
+  page_no                   Int?
+  revised_page_no           Int?
+  id                        Int       @id(map: "PK_userdata") @default(dbgenerated("NEXT VALUE FOR [dbo].[Userdata_Id_Seq]"), map: "DF_Userdata_Id")
+  report_yn                 Boolean   @default(false, map: "DF_Userdata_report_yn")
+  type                      String    @default("", map: "DF__userdata__type__65F62111") @db.NVarChar(50)
+  OriginalFileNames         String?   @db.NVarChar(Max)
+  ownerId                   String?   @db.NVarChar(50)
+  cn_yn                     Boolean?
+  instruction_photo_desc    String?   @db.NVarChar(Max)
+  instruction_photo_summary String?   @db.NVarChar(Max)
+  wordcount                 Int?
+  last_edit_time            DateTime? @db.DateTime
+  pdfdata                   pdfdata[]
+
+  @@index([uniqueid, ownerId], map: "IX_userdata_uniqueid_ownerId")
+  @@index([YN, report_yn, id], map: "IX_userdata_YN_report_yn_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model x_pdfdata_c {
+  id               Int      @default(autoincrement())
+  userdata_id      Int
+  pdf_url          String   @db.NVarChar(Max)
+  score_yn         Boolean?
+  school           String?  @db.NVarChar(255)
+  title            String?  @db.NVarChar(Max)
+  airevisionamount String?  @db.NVarChar(255)
+  titlephotourl    String?  @db.NVarChar(Max)
+  oneessay         Boolean?
+  yn               Boolean?
+
+  @@ignore
+}

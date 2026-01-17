@@ -1,133 +1,91 @@
 /**
- * 数据库连接模块
- * 支持 Azure SQL / MySQL 连接
+ * 数据库连接模块 - Prisma Client
+ * 支持 Azure SQL (Prisma 7 with mssql adapter)
+ *
+ * Prisma 7 变更：
+ * - 使用 driver adapter (node-mssql)
+ * - 不再在 schema 中配置 DATABASE_URL
+ * - 通过 adapter 配置对象传递数据库连接参数
  */
 
-import mysql from 'mysql2/promise';
+import { PrismaClient } from '@prisma/client';
+import { PrismaMssql } from '@prisma/adapter-mssql';
+import * as mssql from 'mssql';
 import { config } from '../config';
 
-let pool: mysql.Pool | null = null;
-
-/**
- * 获取数据库连接池
- */
-export function getPool(): mysql.Pool {
-  if (!pool) {
-    pool = mysql.createPool({
-      host: config.database.host,
-      port: config.database.port,
-      user: config.database.user,
-      password: config.database.password,
-      database: config.database.name,
-      waitForConnections: true,
-      connectionLimit: config.database.connectionLimit,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0,
-      // Azure SQL 需要的额外配置
-      ssl: config.database.ssl ? {
-        rejectUnauthorized: false
-      } : undefined,
-    });
-
-    // 监听连接事件
-    pool.on('connection', (connection) => {
-      console.log('Database connection established');
-    });
-
-    pool.on('error', (err) => {
-      console.error('Database pool error:', err);
-    });
-  }
-
-  return pool;
+// 声明 Prisma Client 扩展类型
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: undefined | PrismaClient;
 }
 
 /**
- * 执行查询
- * @param sql SQL 语句
- * @param params 参数
+ * Prisma Client 单例
+ * 在开发环境中使用热重载，在生产环境中创建单个实例
+ */
+function createPrismaClient(): PrismaClient {
+  // 创建 mssql 连接配置
+  const mssqlConfig: mssql.config = {
+    server: config.database.host,
+    port: config.database.port,
+    database: config.database.name,
+    user: config.database.user,
+    password: config.database.password,
+    options: {
+      encrypt: config.database.ssl,
+      trustServerCertificate: config.database.ssl,
+      enableArithAbort: true,
+    },
+    pool: {
+      max: config.database.connectionLimit,
+      min: 0,
+      idleTimeoutMillis: 30000,
+    },
+  };
+
+  // 创建 Prisma adapter（直接传入配置对象）
+  const adapter = new PrismaMssql(mssqlConfig);
+
+  // 创建 Prisma Client 并传入 adapter
+  return new PrismaClient({
+    adapter,
+    log: config.app.env === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
+}
+
+/**
+ * 获取 Prisma Client 实例
+ */
+export function getPrismaClient(): PrismaClient {
+  if (!global.prisma) {
+    global.prisma = createPrismaClient();
+  }
+  return global.prisma;
+}
+
+/**
+ * 导出 prisma 实例供使用
+ */
+export const prisma = getPrismaClient();
+
+/**
+ * 执行原始 SQL 查询
+ * @param query SQL 查询语句
+ * @param parameters 查询参数
  * @returns 查询结果
  */
-export async function query<T = any>(sql: string, params?: any[]): Promise<T[]> {
-  const pool = getPool();
-  const [rows] = await pool.execute(sql, params);
-  return rows as T[];
+export async function query<T = any>(query: string, parameters?: any[]): Promise<T[]> {
+  return prisma.$queryRawUnsafe(query, ...(parameters || [])) as Promise<T[]>;
 }
 
 /**
- * 执行插入操作
- * @param sql SQL 语句
- * @param params 参数
- * @returns 插入结果
+ * 执行原始 SQL 命令 (INSERT, UPDATE, DELETE 等)
+ * @param command SQL 命令
+ * @param parameters 命令参数
+ * @returns 执行结果
  */
-export async function insert(sql: string, params?: any[]): Promise<mysql.ResultSetHeader> {
-  const pool = getPool();
-  const [result] = await pool.execute(sql, params);
-  return result as mysql.ResultSetHeader;
-}
-
-/**
- * 执行更新操作
- * @param sql SQL 语句
- * @param params 参数
- * @returns 更新结果
- */
-export async function update(sql: string, params?: any[]): Promise<mysql.ResultSetHeader> {
-  const pool = getPool();
-  const [result] = await pool.execute(sql, params);
-  return result as mysql.ResultSetHeader;
-}
-
-/**
- * 执行删除操作
- * @param sql SQL 语句
- * @param params 参数
- * @returns 删除结果
- */
-export async function remove(sql: string, params?: any[]): Promise<mysql.ResultSetHeader> {
-  const pool = getPool();
-  const [result] = await pool.execute(sql, params);
-  return result as mysql.ResultSetHeader;
-}
-
-/**
- * 开始事务
- * @returns 连接对象
- */
-export async function beginTransaction(): Promise<mysql.PoolConnection> {
-  const pool = getPool();
-  const connection = await pool.getConnection();
-  await connection.beginTransaction();
-  return connection;
-}
-
-/**
- * 提交事务
- * @param connection 连接对象
- */
-export async function commit(connection: mysql.PoolConnection): Promise<void> {
-  await connection.commit();
-  connection.release();
-}
-
-/**
- * 回滚事务
- * @param connection 连接对象
- */
-export async function rollback(connection: mysql.PoolConnection): Promise<void> {
-  await connection.rollback();
-  connection.release();
-}
-
-/**
- * 关闭数据库连接池
- */
-export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
+export async function execute(command: string, parameters?: any[]): Promise<number> {
+  return prisma.$executeRawUnsafe(command, ...(parameters || []));
 }
 
 /**
@@ -135,13 +93,37 @@ export async function closePool(): Promise<void> {
  */
 export async function checkConnection(): Promise<boolean> {
   try {
-    const pool = getPool();
-    const connection = await pool.getConnection();
-    await connection.ping();
-    connection.release();
+    await prisma.$connect();
     return true;
   } catch (error) {
     console.error('Database connection check failed:', error);
     return false;
   }
 }
+
+/**
+ * 断开数据库连接
+ */
+export async function disconnect(): Promise<void> {
+  await prisma.$disconnect();
+  if (global.prisma) {
+    global.prisma = undefined;
+  }
+}
+
+/**
+ * 处理进程退出时的连接清理
+ */
+process.on('beforeExit', async () => {
+  await disconnect();
+});
+
+process.on('SIGINT', async () => {
+  await disconnect();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  await disconnect();
+  process.exit(0);
+});

@@ -5,7 +5,11 @@
       "Bash(npm run build:*)",
       "Bash(curl:*)",
       "Bash(ab:*)",
-      "Bash(npx autocannon:*)"
+      "Bash(npx autocannon:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run prisma:generate:*)",
+      "Bash(node:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }
