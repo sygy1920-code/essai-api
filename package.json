@@ -9,7 +9,7 @@
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
     "start": "func start",
-    "dev": "nodemon --watch src --exec \"npm run clean && npm run build && func start\"",
+    "dev": "npm run clean && npm run build && func start",
     "test": "echo \"No tests yet...\"",
     "prisma:generate": "prisma generate",
     "prisma:pull": "printf 'generator client {\\n  provider = \"prisma-client-js\"\\n}\\n\\ndatasource db {\\n  provider = \"sqlserver\"\\n}\\n' > prisma/schema.prisma && prisma db pull",

@@ -3,7 +3,7 @@
  */
 
 import { HttpRequest, HttpResponseInit } from '@azure/functions';
-import { verifyToken, extractToken } from '../middleware/auth';
+import { verifyToken, extractToken, DecodedToken } from '../middleware/auth';
 
 // 简化的 Context 类型
 export interface SimpleContext {
@@ -17,7 +17,7 @@ export interface SimpleContext {
   headers: Record<string, string>;
   status: number;
   body?: any;
-  user?: any;
+  user?: DecodedToken;
   state: {
     requireAuth?: boolean;
   };
@@ -85,7 +85,7 @@ export function createRouterHandler(routes: RouteConfig[]) {
     const requireAuth = route.requireAuth !== false;
     if (requireAuth) {
       const authHeader = req.headers.get('Authorization');
-      const token = extractToken(authHeader || undefined);
+      const token = extractToken(authHeader || undefined) || ctx.query['jwt'];
 
       if (!token) {
         return {
@@ -107,8 +107,11 @@ export function createRouterHandler(routes: RouteConfig[]) {
       ctx.user = decoded;
     }
 
+
+    console.log('Current user:', ctx.user);
+
     // 执行路由处理函数
-    await route.handler(ctx, async () => {});
+    await route.handler(ctx, async () => { });
 
     // 转换响应
     const headers: Record<string, string> = {

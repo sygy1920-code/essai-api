@@ -57,4 +57,10 @@ export const config = {
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
     ssl: process.env.DB_SSL === 'true',
   },
+  // Wix 配置
+  wix: {
+    apiKey: process.env.WIX_API_KEY || '',
+    siteId: process.env.WIX_SITE_ID || '5a9be9f4-02c1-4ec5-93f4-f03240e69bd4',
+    collectionId: process.env.WIX_COLLECTION_ID || 'MemberLookup',
+  },
 };

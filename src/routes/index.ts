@@ -3,8 +3,7 @@
  */
 
 import type { RouteHandler } from '../utils/koa-adapter';
-import { login } from './auth';
-import { getCurrentUser, getUsers } from './users';
+import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
 
 export interface RouteConfig {
@@ -23,14 +22,6 @@ export const routes: RouteConfig[] = [
     requireAuth: false,
   },
 
-  // 认证路由（无需认证）
-  {
-    method: 'POST',
-    path: '/auth/login',
-    handler: login,
-    requireAuth: false,
-  },
-
   // 用户路由（需要认证）
   {
     method: 'GET',
@@ -39,10 +30,11 @@ export const routes: RouteConfig[] = [
     requireAuth: true,
   },
 
+  // 获取自己的学生列表（需要认证）
   {
     method: 'GET',
-    path: '/users',
-    handler: getUsers,
+    path: '/students/list',
+    handler: getMyStudents,
     requireAuth: true,
   },
 ];

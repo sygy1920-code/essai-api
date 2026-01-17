@@ -3,6 +3,7 @@
  */
 
 import type { SimpleContext } from '../utils/koa-adapter';
+import { WixService } from '../services/wixService';
 
 /**
  * 获取当前用户信息
@@ -24,14 +25,20 @@ export async function getCurrentUser(ctx: SimpleContext): Promise<void> {
 }
 
 /**
- * 获取所有用户（演示）
+ * 获取教师的所有学生列表
  */
-export async function getUsers(ctx: SimpleContext): Promise<void> {
-  // 模拟数据
-  const users = [
-    { id: 1, name: 'Alice', email: 'alice@example.com' },
-    { id: 2, name: 'Bob', email: 'bob@example.com' },
-  ];
+export async function getMyStudents(ctx: SimpleContext): Promise<void> {
+  const wixService = new WixService();
+
+  if (ctx.user.rolekey !== 'teachers') {
+    ctx.status = 403;
+    ctx.body = {
+      error: 'Forbidden: Only teachers can access this resource',
+    };
+    return;
+  }
+
+  const users = await wixService.getStudentsByTeacher(ctx.user.email);
 
   ctx.status = 200;
   ctx.body = {

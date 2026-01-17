@@ -9,7 +9,8 @@
       "Bash(npx prisma:*)",
       "Bash(npm run prisma:generate:*)",
       "Bash(node:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

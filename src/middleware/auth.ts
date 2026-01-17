@@ -6,9 +6,10 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 
 export interface DecodedToken {
-  userId: string;
-  username?: string;
-  [key: string]: any;
+  memberId: string;
+  rolekey: 'teachers' | 'students';
+  school: string;
+  email: string;
 }
 
 /**
