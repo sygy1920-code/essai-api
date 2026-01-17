@@ -13,9 +13,7 @@
     "test": "echo \"No tests yet...\"",
     "prisma:generate": "prisma generate",
     "prisma:pull": "printf 'generator client {\\n  provider = \"prisma-client-js\"\\n}\\n\\ndatasource db {\\n  provider = \"sqlserver\"\\n}\\n' > prisma/schema.prisma && prisma db pull",
-    "prisma:push": "prisma db push",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "wix:collection": "ts-node scripts/get-wix-collection.ts"
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",
@@ -24,7 +22,9 @@
     "@types/jsonwebtoken": "^9.0.10",
     "jsonwebtoken": "^9.0.3",
     "mssql": "^11.0.1",
-    "prisma": "^7.2.0"
+    "prisma": "^7.2.0",
+    "@wix/sdk": "^1.21.2",
+    "@wix/data": "^1.0.376"
   },
   "devDependencies": {
     "@prisma/config": "^7.2.0",
@@ -33,6 +33,7 @@
     "azure-functions-core-tools": "^4.x",
     "nodemon": "^3.0.0",
     "rimraf": "^5.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   }
 }
