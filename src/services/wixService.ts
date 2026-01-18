@@ -98,7 +98,7 @@ class WixService {
     const collectionId = 'oralUsage';
 
     try {
-      let query = this.client.items.query(collectionId).eq('memberId', memberId).descending('_id');
+      let query = this.client.items.query(collectionId).eq('memberId', memberId).descending('_createdDate').limit(1000);
 
       // 添加时间范围筛选（Wix Data API 支持 ge 和 le 操作符）
       if (startDate) {

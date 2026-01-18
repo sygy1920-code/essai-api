@@ -30,7 +30,7 @@ export async function getStudentEssays(ctx: HttpContext): Promise<void> {
   // 解析查询参数
   const query = ctx.req.query;
   const member_id = query.get('member_id');
-  const school = query.get('school');
+  const school = decodeURIComponent(query.get('school') || '');
   const schoolclass = query.get('schoolclass');
   const classno = query.get('classno');
   const start_date = query.get('start_date');
@@ -62,13 +62,13 @@ export async function getStudentEssays(ctx: HttpContext): Promise<void> {
       Prisma.sql`classno = ${parseInt(classno)}`,
     ];
 
-    // if (startDate) {
-    //   conditions.push(Prisma.sql`inserted_at >= ${startDate}`);
-    // }
+    if (startDate) {
+      conditions.push(Prisma.sql`inserted_at >= ${startDate}`);
+    }
 
-    // if (endDate) {
-    //   conditions.push(Prisma.sql`inserted_at <= ${endDate}`);
-    // }
+    if (endDate) {
+      conditions.push(Prisma.sql`inserted_at <= ${endDate}`);
+    }
 
     // 组合 WHERE 条件
     const whereClause = conditions.reduce(
@@ -170,7 +170,7 @@ export async function getStudentEssays(ctx: HttpContext): Promise<void> {
             revised_text3_user,
             relevancy_comment_user
           FROM c_imagedata_full
-          WHERE id IN (${chineseIds.join(',')})
+          WHERE id IN (${Prisma.join(chineseIds)})
         `
         : Promise.resolve([]),
     ]);
