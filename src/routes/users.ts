@@ -2,13 +2,13 @@
  * 用户相关路由
  */
 
-import type { SimpleContext } from '../utils/koa-adapter';
 import { wixService } from '../services/wixService';
+import { HttpContext } from '../types';
 
 /**
  * 获取当前用户信息
  */
-export async function getCurrentUser(ctx: SimpleContext): Promise<void> {
+export async function getCurrentUser(ctx: HttpContext): Promise<void> {
   if (!ctx.user) {
     ctx.status = 401;
     ctx.body = {
@@ -27,7 +27,7 @@ export async function getCurrentUser(ctx: SimpleContext): Promise<void> {
 /**
  * 获取教师的所有学生列表
  */
-export async function getMyStudents(ctx: SimpleContext): Promise<void> {
+export async function getMyStudents(ctx: HttpContext): Promise<void> {
   if (ctx.user.rolekey !== 'teachers') {
     ctx.status = 403;
     ctx.body = {

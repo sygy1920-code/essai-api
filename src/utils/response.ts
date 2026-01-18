@@ -2,12 +2,12 @@
  * 响应工具函数
  */
 
-import { ApiResponse } from '../types';
+import { HttpResponseInit } from '@azure/functions/types/http';
 
 /**
  * 生成成功响应
  */
-export function success(data: any, status = 200): any {
+export function success(data: any, status = 200): HttpResponseInit {
   return {
     status,
     body: JSON.stringify({
@@ -23,7 +23,7 @@ export function success(data: any, status = 200): any {
 /**
  * 生成错误响应
  */
-export function error(message: string, status = 400): any {
+export function error(message: string, status = 400): HttpResponseInit {
   return {
     status,
     body: JSON.stringify({

@@ -38,7 +38,7 @@ function createPrismaClient(): PrismaClient {
     },
     pool: {
       max: config.database.connectionLimit,
-      min: 0,
+      min: 1,
       idleTimeoutMillis: 30000,
     },
   };

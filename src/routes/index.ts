@@ -2,13 +2,15 @@
  * 路由定义
  */
 
-import type { RouteHandler } from '../utils/koa-adapter';
 import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
 import { getSubmissionList } from './submissions';
+import { HttpContext } from '../types';
+
+export type RouteHandler = (ctx: HttpContext, next: () => Promise<void>) => void | Promise<void>;
 
 export interface RouteConfig {
-  method: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
   path: string;
   handler: RouteHandler;
   requireAuth?: boolean;

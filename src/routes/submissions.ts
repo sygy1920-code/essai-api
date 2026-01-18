@@ -2,8 +2,8 @@
  * 作业提交相关路由
  */
 
-import type { SimpleContext } from '../utils/koa-adapter';
 import { prisma } from '../db/connection';
+import { HttpContext } from '../types';
 
 /**
  * 分页参数接口
@@ -17,7 +17,7 @@ interface PaginationParams {
 /**
  * 获取全部作业列表（支持分页和多语言）
  */
-export async function getSubmissionList(ctx: SimpleContext): Promise<void> {
+export async function getSubmissionList(ctx: HttpContext): Promise<void> {
   if (!ctx.user) {
     ctx.status = 401;
     ctx.body = {
@@ -27,10 +27,10 @@ export async function getSubmissionList(ctx: SimpleContext): Promise<void> {
   }
 
   // 解析查询参数
-  const query = ctx.query;
-  const page = parseInt(query.page || '1', 10);
-  const pageSize = parseInt(query.pageSize || '10', 10);
-  const lang = (query.lang || 'en') as 'en' | 'hk';
+  const query = ctx.req.query;
+  const page = parseInt(query.get('page') || '1', 10);
+  const pageSize = parseInt(query.get('pageSize') || '10', 10);
+  const lang = (query.get('lang') || 'en') as 'en' | 'hk';
 
   // 验证参数
   if (page < 1 || pageSize < 1 || pageSize > 100) {
