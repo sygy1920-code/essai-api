@@ -36,9 +36,7 @@ export async function getMyStudents(ctx: HttpContext): Promise<void> {
     return;
   }
 
-  // const users = await wixService.getStudentsByTeacher(ctx.user.email);
-  const users = await wixService.getStudentsByTeacher('hhy.renee@gmail.com');
-
+  const users = await wixService.getStudentsByTeacher(ctx.user.email);
 
   ctx.status = 200;
   ctx.body = {

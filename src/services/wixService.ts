@@ -6,6 +6,7 @@
 import { createClient, ApiKeyStrategy, WixClient, IApiKeyStrategy } from '@wix/sdk';
 import { items } from '@wix/data';
 import { config } from '../config';
+import { OralSpeechRecord } from '../types/oral-speech-record.types';
 
 /**
  * Member interface based on MemberLookup collection schema
@@ -28,6 +29,7 @@ export interface Member {
   memberId: string;
   userCredits: number;
 }
+
 
 /**
  * Wix Service class
@@ -85,6 +87,36 @@ class WixService {
     } catch (error) {
       console.error('Error finding students:', error);
       throw new Error(`Failed to find students: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getOralByMember(
+    memberId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<OralSpeechRecord[]> {
+    const collectionId = 'oralUsage';
+
+    try {
+      let query = this.client.items.query(collectionId).eq('memberId', memberId).descending('_id');
+
+      // 添加时间范围筛选（Wix Data API 支持 ge 和 le 操作符）
+      if (startDate) {
+        query = query.ge('_createdDate', new Date(startDate));
+      }
+      if (endDate) {
+        query = query.le('_createdDate', new Date(endDate));
+      }
+      
+
+      const result = await query.find();
+
+      result
+
+      return result.items as unknown as OralSpeechRecord[];
+    } catch (error) {
+      console.error('Error finding oral records:', error);
+      throw new Error(`Failed to find oral records: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

@@ -6,6 +6,8 @@ import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
 import { getSubmissionList } from './submissions';
 import { getStudentHomeworks } from './student-homework';
+import { getOralHomeworks } from './oral-homeworks';
+import { getStudentEssays } from './student-essays';
 import { HttpContext } from '../types';
 
 export type RouteHandler = (ctx: HttpContext, next: () => Promise<void>) => void | Promise<void>;
@@ -55,6 +57,22 @@ export const routes: RouteConfig[] = [
     method: 'GET',
     path: '/student-homeworks',
     handler: getStudentHomeworks,
+    requireAuth: true,
+  },
+
+  // 获取学生口语作业列表（需要认证，支持时间筛选）
+  {
+    method: 'GET',
+    path: '/oral-homeworks',
+    handler: getOralHomeworks,
+    requireAuth: true,
+  },
+
+  // 获取学生作文列表（需要认证，包含中英文作文）
+  {
+    method: 'GET',
+    path: '/student-essays',
+    handler: getStudentEssays,
     requireAuth: true,
   },
 ];
