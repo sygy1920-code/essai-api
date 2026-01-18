@@ -41,19 +41,15 @@ essai-api/
 │   ├── services/
 │   │   └── wixService.ts       # Wix Data API 集成服务
 │   ├── utils/
-│   │   ├── koa-adapter.ts      # Azure Functions 路由适配器
 │   │   └── response.ts         # 响应工具函数
 │   ├── db/
 │   │   ├── index.ts            # 数据库模块导出
 │   │   └── connection.ts       # Prisma 客户端配置
 │   ├── types/
 │   │   └── index.ts            # TypeScript 类型定义
-│   ├── config.ts               # 应用配置
-│   └── app.ts                  # 路由导出
+│   └── config.ts               # 应用配置
 ├── prisma/
 │   ├── schema.prisma           # 数据库模式定义
-│   ├── PRISMA_7_UPGRADE.md     # Prisma 7 升级指南
-│   └── PRISMA_USAGE.md         # Prisma 使用文档
 ├── scripts/
 │   └── get-wix-collection.ts   # 获取 Wix 集合数据脚本
 ├── test/                       # 测试目录

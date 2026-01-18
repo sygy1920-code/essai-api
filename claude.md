@@ -37,14 +37,12 @@ src/
 ├── middleware/auth.ts        # JWT 认证中间件
 ├── services/wixService.ts    # Wix API 集成服务
 ├── utils/
-│   ├── koa-adapter.ts       # 路由适配器（核心）
 │   └── response.ts          # 响应格式化
 ├── db/
 │   ├── index.ts             # 数据库模块导出
 │   └── connection.ts        # Prisma 客户端配置
 ├── types/index.ts            # TypeScript 类型定义
-├── config.ts                 # 应用配置
-└── app.ts                    # 路由导出
+└── config.ts                 # 应用配置
 ```
 
 ## 开发工作流
