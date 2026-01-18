@@ -5,6 +5,7 @@
 import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
 import { getSubmissionList } from './submissions';
+import { getStudentEssays } from './student-essays';
 import { HttpContext } from '../types';
 
 export type RouteHandler = (ctx: HttpContext, next: () => Promise<void>) => void | Promise<void>;
@@ -46,6 +47,14 @@ export const routes: RouteConfig[] = [
     method: 'GET',
     path: '/submission/list',
     handler: getSubmissionList,
+    requireAuth: true,
+  },
+
+  // 获取学生所有作文列表（需要认证，支持时间筛选和多语言）
+  {
+    method: 'GET',
+    path: '/student-essays',
+    handler: getStudentEssays,
     requireAuth: true,
   },
 ];

@@ -3,6 +3,7 @@
  */
 
 import { prisma } from '../db/connection';
+import { c_userdata } from '@prisma/client';
 import { HttpContext } from '../types';
 
 /**
@@ -54,7 +55,7 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
     const skip = (page - 1) * pageSize;
     const take = pageSize;
 
-    let submissions: any[];
+    let submissions: c_userdata[];
     let totalCount: number;
 
     if (lang === 'hk') {
@@ -63,16 +64,18 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
         prisma.c_userdata.findMany({
           where: {
             ownerId: ctx.user.memberId,
+            YN: true,
           },
           skip,
           take,
           orderBy: {
-            UploadTime: 'desc',
+            id: 'desc',
           },
         }),
         prisma.c_userdata.count({
           where: {
             ownerId: ctx.user.memberId,
+            YN: true,
           },
         }),
       ]);
@@ -82,16 +85,18 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
         prisma.userdata.findMany({
           where: {
             ownerId: ctx.user.memberId,
+            YN: true,
           },
           skip,
           take,
           orderBy: {
-            UploadTime: 'desc',
+            id: 'desc',
           },
         }),
         prisma.userdata.count({
           where: {
             ownerId: ctx.user.memberId,
+            YN: true,
           },
         }),
       ]);

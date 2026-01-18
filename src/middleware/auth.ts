@@ -10,6 +10,7 @@ export interface DecodedToken {
   rolekey: 'teachers' | 'students';
   school: string;
   email: string;
+  class: string;
 }
 
 /**
