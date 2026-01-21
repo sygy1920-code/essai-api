@@ -4,7 +4,7 @@
 
 import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
-import { getSubmissionList } from './submissions';
+import { getSubmissionList, getClassAverageScores } from './submissions';
 import { getStudentHomeworks } from './student-homework';
 import { getOralHomeworks } from './oral-homeworks';
 import { getStudentEssays } from './student-essays';
@@ -73,6 +73,14 @@ export const routes: RouteConfig[] = [
     method: 'GET',
     path: '/student-essays',
     handler: getStudentEssays,
+    requireAuth: true,
+  },
+
+  // 获取各个班级的作文平均分统计（需要认证，支持时间筛选和多语言）
+  {
+    method: 'GET',
+    path: '/class-average-scores',
+    handler: getClassAverageScores,
     requireAuth: true,
   },
 ];
