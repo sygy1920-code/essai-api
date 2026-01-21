@@ -28,7 +28,25 @@ interface ClassMonthlyTrend {
 }
 
 /**
+ * 按 classno 分组的月度趋势数据接口
+ */
+interface ClassNoMonthlyTrend {
+  classno: number;
+  month: string; // 格式: YYYY-MM
+  averageScore: number;
+  count: number;
+}
+
+/**
  * 获取全部作业列表（支持分页和多语言）
+ *
+ * 查询参数:
+ * - page: 页码，默认 1
+ * - pageSize: 每页数量，默认 10，最大 100
+ * - lang: 语言版本 (en/hk)，默认 en
+ * - class: 班级名称（可选）
+ * - startDate: 开始日期（可选），ISO 8601 格式
+ * - endDate: 结束日期（可选），ISO 8601 格式
  */
 export async function getSubmissionList(ctx: HttpContext): Promise<void> {
   if (!ctx.user) {
@@ -45,12 +63,16 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
   const pageSize = parseInt(query.get('pageSize') || '10', 10);
   const lang = (query.get('lang') || 'en') as 'en' | 'hk';
   const classFilter = query.get('class') || undefined;
+  const startDate = query.get('startDate');
+  const endDate = query.get('endDate');
 
   console.log('[getSubmissionList] 查询参数:', {
     page,
     pageSize,
     lang,
     classFilter,
+    startDate,
+    endDate,
     memberId: ctx.user.memberId,
   });
 
@@ -71,28 +93,59 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
     return;
   }
 
+  // 验证日期格式
+  if (startDate && isNaN(Date.parse(startDate))) {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Invalid startDate format. Use ISO 8601 format (e.g., 2024-01-01)',
+    };
+    return;
+  }
+
+  if (endDate && isNaN(Date.parse(endDate))) {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Invalid endDate format. Use ISO 8601 format (e.g., 2024-12-31)',
+    };
+    return;
+  }
+
   try {
     // 根据语言选择不同的表
     const skip = (page - 1) * pageSize;
     const take = pageSize;
 
-    // 构建基础查询条件
-    const baseWhere = {
-      ownerId: ctx.user.memberId,
-      YN: true,
-      ...(classFilter && { Class: classFilter }),
-    };
-
-    console.log('[getSubmissionList] 查询条件:', baseWhere);
-
     let submissions: c_userdata[];
     let totalCount: number;
 
     if (lang === 'hk') {
+      // 构建查询条件
+      const whereCondition: any = {
+        ownerId: ctx.user.memberId,
+        YN: true,
+        ...(classFilter && { Class: classFilter }),
+      };
+
+      // 添加时间范围过滤
+      if (startDate || endDate) {
+        const dateFilter: any = {};
+        if (startDate) {
+          dateFilter.gte = new Date(startDate);
+        }
+        if (endDate) {
+          const endDateObj = new Date(endDate);
+          endDateObj.setHours(23, 59, 59, 999);
+          dateFilter.lte = endDateObj;
+        }
+        whereCondition.UploadTime = dateFilter;
+      }
+
+      console.log('[getSubmissionList] 查询条件 (HK):', JSON.stringify(whereCondition, null, 2));
+
       // 使用 c_userdata 表
       [submissions, totalCount] = await Promise.all([
         prisma.c_userdata.findMany({
-          where: baseWhere,
+          where: whereCondition,
           skip,
           take,
           orderBy: {
@@ -100,14 +153,37 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
           },
         }),
         prisma.c_userdata.count({
-          where: baseWhere,
+          where: whereCondition,
         }),
       ]);
     } else {
+      // 构建查询条件
+      const whereCondition: any = {
+        ownerId: ctx.user.memberId,
+        YN: true,
+        ...(classFilter && { Class: classFilter }),
+      };
+
+      // 添加时间范围过滤
+      if (startDate || endDate) {
+        const dateFilter: any = {};
+        if (startDate) {
+          dateFilter.gte = new Date(startDate);
+        }
+        if (endDate) {
+          const endDateObj = new Date(endDate);
+          endDateObj.setHours(23, 59, 59, 999);
+          dateFilter.lte = endDateObj;
+        }
+        whereCondition.UploadTime = dateFilter;
+      }
+
+      console.log('[getSubmissionList] 查询条件 (EN):', JSON.stringify(whereCondition, null, 2));
+
       // 使用 userdata 表（默认 en）
       [submissions, totalCount] = await Promise.all([
         prisma.userdata.findMany({
-          where: baseWhere,
+          where: whereCondition,
           skip,
           take,
           orderBy: {
@@ -115,7 +191,7 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
           },
         }),
         prisma.userdata.count({
-          where: baseWhere,
+          where: whereCondition,
         }),
       ]);
     }
@@ -147,6 +223,8 @@ export async function getSubmissionList(ctx: HttpContext): Promise<void> {
 /**
  * 获取班级月度平均分趋势统计
  * 支持按时间段查询，支持英文和中文两种语言版本
+ *
+ * 注意：AverageScore 为 null 的记录会被视为 0 分参与计算
  */
 export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
   if (!ctx.user) {
@@ -209,17 +287,17 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
 
     if (lang === 'hk') {
       // 使用 c_userdata 表（中文）
+      // AverageScore 为 null 时视为 0
       const sqlQuery = Prisma.sql`
         SELECT
           COALESCE(Class, 'unknown') as class,
           FORMAT(UploadTime, 'yyyy-MM') as month,
           COUNT(*) as count,
-          AVG(CAST(AverageScore AS FLOAT)) as avgScore
+          AVG(CAST(COALESCE(AverageScore, 0) AS FLOAT)) as avgScore
         FROM c_userdata
         WHERE
           ownerId = ${ctx.user.memberId}
           AND YN = 1
-          AND AverageScore IS NOT NULL
           ${Prisma.raw(timeCondition)}
         GROUP BY COALESCE(Class, 'unknown'), FORMAT(UploadTime, 'yyyy-MM')
         ORDER BY class, month
@@ -237,17 +315,17 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
       }));
     } else {
       // 使用 userdata 表（英文）
+      // AverageScore 为 null 时视为 0
       const sqlQuery = Prisma.sql`
         SELECT
           COALESCE(Class, 'unknown') as class,
           FORMAT(UploadTime, 'yyyy-MM') as month,
           COUNT(*) as count,
-          AVG(CAST(AverageScore AS FLOAT)) as avgScore
+          AVG(CAST(COALESCE(AverageScore, 0) AS FLOAT)) as avgScore
         FROM userdata
         WHERE
           ownerId = ${ctx.user.memberId}
           AND YN = 1
-          AND AverageScore IS NOT NULL
           ${Prisma.raw(timeCondition)}
         GROUP BY COALESCE(Class, 'unknown'), FORMAT(UploadTime, 'yyyy-MM')
         ORDER BY class, month
@@ -281,6 +359,199 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
     };
   } catch (error) {
     console.error('Error fetching class monthly average scores:', error);
+    ctx.status = 500;
+    ctx.body = {
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * 获取按 classno 分组的班级月度平均分趋势统计
+ * 支持按时间段查询，支持英文和中文两种语言版本
+ * 从 report_score 表获取学生得分数据
+ *
+ * 关联链路:
+ * - 英文版: userdata → pdfdata → imagedata → imagedata_full → report_score
+ * - 中文版: c_userdata → c_pdfdata → c_imagedata → c_imagedata_full → report_score_c
+ *
+ * 查询参数:
+ * - lang: 语言版本 (en/hk)，默认 en
+ * - class: 班级名称（必填）
+ * - startDate: 开始日期（可选），ISO 8601 格式
+ * - endDate: 结束日期（可选），ISO 8601 格式
+ */
+export async function getClassMonthlyTrendsByClassNo(ctx: HttpContext): Promise<void> {
+  if (!ctx.user) {
+    ctx.status = 401;
+    ctx.body = {
+      error: 'Unauthorized',
+    };
+    return;
+  }
+
+  // 解析查询参数
+  const query = ctx.req.query;
+  const lang = (query.get('lang') || 'en') as 'en' | 'hk';
+  const classParam = query.get('class');
+  const startDate = query.get('startDate');
+  const endDate = query.get('endDate');
+
+  console.log('[getClassMonthlyTrendsByClassNo] 查询参数:', {
+    lang,
+    class: classParam,
+    startDate,
+    endDate,
+    memberId: ctx.user.memberId,
+  });
+
+  // 验证必填参数
+  if (!classParam) {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Missing required parameter: class',
+    };
+    return;
+  }
+
+  // 验证参数
+  if (lang !== 'en' && lang !== 'hk') {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Invalid lang parameter. Must be "en" or "hk"',
+    };
+    return;
+  }
+
+  // 验证日期格式
+  if (startDate && isNaN(Date.parse(startDate))) {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Invalid startDate format. Use ISO 8601 format (e.g., 2024-01-01)',
+    };
+    return;
+  }
+
+  if (endDate && isNaN(Date.parse(endDate))) {
+    ctx.status = 400;
+    ctx.body = {
+      error: 'Invalid endDate format. Use ISO 8601 format (e.g., 2024-12-31)',
+    };
+    return;
+  }
+
+  try {
+    // 构建 SQL 查询的条件部分
+    let timeCondition = '';
+    if (startDate || endDate) {
+      const conditions: string[] = [];
+      if (startDate) {
+        conditions.push(`u.UploadTime >= '${new Date(startDate).toISOString()}'`);
+      }
+      if (endDate) {
+        const endDateObj = new Date(endDate);
+        endDateObj.setHours(23, 59, 59, 999);
+        conditions.push(`u.UploadTime <= '${endDateObj.toISOString()}'`);
+      }
+      timeCondition = 'AND ' + conditions.join(' AND ');
+    }
+
+    let results: ClassNoMonthlyTrend[];
+
+    if (lang === 'hk') {
+      // 使用 c_userdata、c_pdfdata、c_imagedata、c_imagedata_full、report_score_c 表（中文版本）
+      // 关联链路: c_userdata → c_pdfdata → c_imagedata → c_imagedata_full → report_score_c
+      // 按 report_score_c.classno 分组
+      const sqlQuery = Prisma.sql`
+        SELECT
+          COALESCE(r.classno, 0) as classno,
+          FORMAT(u.UploadTime, 'yyyy-MM') as month,
+          COUNT(*) as count,
+          AVG(CAST(r.total_score AS FLOAT)) as avgScore
+        FROM c_userdata u
+        INNER JOIN c_pdfdata a ON u.id = a.userdata_id
+        INNER JOIN c_imagedata d ON a.id = d.pdfdata_id
+        INNER JOIN c_imagedata_full b ON d.id = b.id
+        INNER JOIN report_score_c r ON b.id = r.id
+        WHERE
+          u.ownerId = ${ctx.user.memberId}
+          AND u.YN = 1
+          AND u.Class = ${classParam}
+          AND r.total_score IS NOT NULL
+          ${Prisma.raw(timeCondition)}
+        GROUP BY COALESCE(r.classno, 0), FORMAT(u.UploadTime, 'yyyy-MM')
+        ORDER BY classno, month
+      `;
+
+      const rawData = await prisma.$queryRaw<
+        Array<{ classno: number | null; month: string; count: bigint; avgScore: number }>
+      >(sqlQuery);
+
+      results = rawData.map((item) => ({
+        classno: item.classno || 0,
+        month: item.month,
+        averageScore: item.avgScore || 0,
+        count: Number(item.count),
+      }));
+    } else {
+      // 使用 userdata、pdfdata、imagedata、imagedata_full、report_score 表（英文版本）
+      // 关联链路: userdata → pdfdata → imagedata → imagedata_full → report_score
+      // 按 report_score.classno 分组
+      const sqlQuery = Prisma.sql`
+        SELECT
+          COALESCE(r.classno, 0) as classno,
+          FORMAT(u.UploadTime, 'yyyy-MM') as month,
+          COUNT(*) as count,
+          AVG(CAST(r.total_score AS FLOAT)) as avgScore
+        FROM userdata u
+        INNER JOIN pdfdata a ON u.id = a.userdata_id
+        INNER JOIN imagedata d ON a.id = d.pdfdata_id
+        INNER JOIN imagedata_full b ON d.id = b.id
+        INNER JOIN report_score r ON b.id = r.id
+        WHERE
+          u.ownerId = ${ctx.user.memberId}
+          AND u.YN = 1
+          AND u.Class = ${classParam}
+          AND r.total_score IS NOT NULL
+          ${Prisma.raw(timeCondition)}
+        GROUP BY COALESCE(r.classno, 0), FORMAT(u.UploadTime, 'yyyy-MM')
+        ORDER BY classno, month
+      `;
+
+      const rawData = await prisma.$queryRaw<
+        Array<{ classno: number | null; month: string; count: bigint; avgScore: number }>
+      >(sqlQuery);
+
+      results = rawData.map((item) => ({
+        classno: item.classno || 0,
+        month: item.month,
+        averageScore: item.avgScore || 0,
+        count: Number(item.count),
+      }));
+    }
+
+    console.log('[getClassMonthlyTrendsByClassNo] 查询结果:', {
+      resultCount: results.length,
+      totalEssays: results.reduce((sum, item) => sum + item.count, 0),
+    });
+
+    // 返回结果
+    ctx.status = 200;
+    ctx.body = {
+      success: true,
+      data: results,
+      summary: {
+        totalRecords: results.length,
+        totalEssays: results.reduce((sum, item) => sum + item.count, 0),
+        overallAverage: results.length > 0
+          ? results.reduce((sum, item) => sum + item.averageScore * item.count, 0) /
+            results.reduce((sum, item) => sum + item.count, 0)
+          : 0,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching class monthly trends by classno:', error);
     ctx.status = 500;
     ctx.body = {
       error: 'Internal server error',

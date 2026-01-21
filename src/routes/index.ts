@@ -4,7 +4,7 @@
 
 import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
-import { getSubmissionList, getClassAverageScores } from './submissions';
+import { getSubmissionList, getClassAverageScores, getClassMonthlyTrendsByClassNo } from './submissions';
 import { getStudentHomeworks } from './student-homework';
 import { getOralHomeworks } from './oral-homeworks';
 import { getStudentEssays } from './student-essays';
@@ -81,6 +81,14 @@ export const routes: RouteConfig[] = [
     method: 'GET',
     path: '/class-average-scores',
     handler: getClassAverageScores,
+    requireAuth: true,
+  },
+
+  // 获取按 classno 分组的班级月度平均分趋势统计（需要认证，支持时间筛选和多语言）
+  {
+    method: 'GET',
+    path: '/class-monthly-trends-by-classno',
+    handler: getClassMonthlyTrendsByClassNo,
     requireAuth: true,
   },
 ];
