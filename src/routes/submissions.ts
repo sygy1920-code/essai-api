@@ -6,6 +6,8 @@ import { prisma } from '../db/connection';
 import { c_userdata } from '@prisma/client';
 import { HttpContext } from '../types';
 import { Prisma } from '@prisma/client';
+import { wixService } from '../services/wixService';
+import type { Member } from '../services/wixService';
 
 /**
  * 分页参数接口
@@ -35,6 +37,21 @@ interface ClassNoMonthlyTrend {
   month: string; // 格式: YYYY-MM
   averageScore: number;
   count: number;
+}
+
+/**
+ * 包含学生信息的月度趋势数据接口
+ */
+interface ClassNoMonthlyTrendWithStudents extends ClassNoMonthlyTrend {
+  students: Member[];
+}
+
+/**
+ * 按 classno 分组的学生信息接口
+ */
+interface ClassNoStudents {
+  classno: number | string;
+  students: Member[];
 }
 
 /**
@@ -290,7 +307,7 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
       // AverageScore 为 null 时视为 0
       const sqlQuery = Prisma.sql`
         SELECT
-          COALESCE(Class, 'unknown') as class,
+          UPPER(COALESCE(Class, 'unknown')) as class,
           FORMAT(UploadTime, 'yyyy-MM') as month,
           COUNT(*) as count,
           AVG(CAST(COALESCE(AverageScore, 0) AS FLOAT)) as avgScore
@@ -299,7 +316,7 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
           ownerId = ${ctx.user.memberId}
           AND YN = 1
           ${Prisma.raw(timeCondition)}
-        GROUP BY COALESCE(Class, 'unknown'), FORMAT(UploadTime, 'yyyy-MM')
+        GROUP BY UPPER(COALESCE(Class, 'unknown')), FORMAT(UploadTime, 'yyyy-MM')
         ORDER BY class, month
       `;
 
@@ -318,7 +335,7 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
       // AverageScore 为 null 时视为 0
       const sqlQuery = Prisma.sql`
         SELECT
-          COALESCE(Class, 'unknown') as class,
+          UPPER(COALESCE(Class, 'unknown')) as class,
           FORMAT(UploadTime, 'yyyy-MM') as month,
           COUNT(*) as count,
           AVG(CAST(COALESCE(AverageScore, 0) AS FLOAT)) as avgScore
@@ -327,7 +344,7 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
           ownerId = ${ctx.user.memberId}
           AND YN = 1
           ${Prisma.raw(timeCondition)}
-        GROUP BY COALESCE(Class, 'unknown'), FORMAT(UploadTime, 'yyyy-MM')
+        GROUP BY UPPER(COALESCE(Class, 'unknown')), FORMAT(UploadTime, 'yyyy-MM')
         ORDER BY class, month
       `;
 
@@ -353,7 +370,7 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
         totalEssays: results.reduce((sum, item) => sum + item.count, 0),
         overallAverage: results.length > 0
           ? results.reduce((sum, item) => sum + item.averageScore * item.count, 0) /
-            results.reduce((sum, item) => sum + item.count, 0)
+          results.reduce((sum, item) => sum + item.count, 0)
           : 0,
       },
     };
@@ -371,6 +388,7 @@ export async function getClassAverageScores(ctx: HttpContext): Promise<void> {
  * 获取按 classno 分组的班级月度平均分趋势统计
  * 支持按时间段查询，支持英文和中文两种语言版本
  * 从 report_score 表获取学生得分数据
+ * 最终结果根据 classno 从 wixService.getStudentsByTeacher 获取用户信息
  *
  * 关联链路:
  * - 英文版: userdata → pdfdata → imagedata → imagedata_full → report_score
@@ -442,6 +460,12 @@ export async function getClassMonthlyTrendsByClassNo(ctx: HttpContext): Promise<
   }
 
   try {
+    // 并发获取学生数据和执行数据库查询
+    console.log('[getClassMonthlyTrendsByClassNo] 开始并发获取学生数据和执行数据库查询...');
+
+    // 将 classParam 转换为大写，确保比较一致性
+    const classParamUpper = classParam.toUpperCase();
+
     // 构建 SQL 查询的条件部分
     let timeCondition = '';
     if (startDate || endDate) {
@@ -457,97 +481,119 @@ export async function getClassMonthlyTrendsByClassNo(ctx: HttpContext): Promise<
       timeCondition = 'AND ' + conditions.join(' AND ');
     }
 
-    let results: ClassNoMonthlyTrend[];
+    // 并发执行：获取学生数据 + 查询数据库
+    const [allStudents, results] = await Promise.all([
+      wixService.getStudentsByTeacher(ctx.user.email),
+      (async () => {
+        if (lang === 'hk') {
+          // 使用 c_userdata、c_pdfdata、c_imagedata、c_imagedata_full、report_score_c 表（中文版本）
+          const sqlQuery = Prisma.sql`
+            SELECT
+              COALESCE(r.classno, 0) as classno,
+              FORMAT(u.UploadTime, 'yyyy-MM') as month,
+              COUNT(*) as count,
+              AVG(CAST(r.total_score AS FLOAT)) as avgScore
+            FROM c_userdata u
+            INNER JOIN c_pdfdata a ON u.id = a.userdata_id
+            INNER JOIN c_imagedata d ON a.id = d.pdfdata_id
+            INNER JOIN c_imagedata_full b ON d.id = b.id
+            INNER JOIN report_score_c r ON b.id = r.id
+            WHERE
+              u.ownerId = ${ctx.user.memberId}
+              AND u.YN = 1
+              AND UPPER(u.Class) = ${classParamUpper}
+              AND r.total_score IS NOT NULL
+              ${Prisma.raw(timeCondition)}
+            GROUP BY COALESCE(r.classno, 0), FORMAT(u.UploadTime, 'yyyy-MM')
+            ORDER BY classno, month
+          `;
 
-    if (lang === 'hk') {
-      // 使用 c_userdata、c_pdfdata、c_imagedata、c_imagedata_full、report_score_c 表（中文版本）
-      // 关联链路: c_userdata → c_pdfdata → c_imagedata → c_imagedata_full → report_score_c
-      // 按 report_score_c.classno 分组
-      const sqlQuery = Prisma.sql`
-        SELECT
-          COALESCE(r.classno, 0) as classno,
-          FORMAT(u.UploadTime, 'yyyy-MM') as month,
-          COUNT(*) as count,
-          AVG(CAST(r.total_score AS FLOAT)) as avgScore
-        FROM c_userdata u
-        INNER JOIN c_pdfdata a ON u.id = a.userdata_id
-        INNER JOIN c_imagedata d ON a.id = d.pdfdata_id
-        INNER JOIN c_imagedata_full b ON d.id = b.id
-        INNER JOIN report_score_c r ON b.id = r.id
-        WHERE
-          u.ownerId = ${ctx.user.memberId}
-          AND u.YN = 1
-          AND u.Class = ${classParam}
-          AND r.total_score IS NOT NULL
-          ${Prisma.raw(timeCondition)}
-        GROUP BY COALESCE(r.classno, 0), FORMAT(u.UploadTime, 'yyyy-MM')
-        ORDER BY classno, month
-      `;
+          const rawData = await prisma.$queryRaw<
+            Array<{ classno: number | null; month: string; count: bigint; avgScore: number }>
+          >(sqlQuery);
 
-      const rawData = await prisma.$queryRaw<
-        Array<{ classno: number | null; month: string; count: bigint; avgScore: number }>
-      >(sqlQuery);
+          return rawData.map((item) => ({
+            classno: item.classno || 0,
+            month: item.month,
+            averageScore: item.avgScore || 0,
+            count: Number(item.count),
+          }));
+        } else {
+          // 使用 userdata、pdfdata、imagedata、imagedata_full、report_score 表（英文版本）
+          const sqlQuery = Prisma.sql`
+            SELECT
+              COALESCE(r.classno, 0) as classno,
+              FORMAT(u.UploadTime, 'yyyy-MM') as month,
+              COUNT(*) as count,
+              AVG(CAST(r.total_score AS FLOAT)) as avgScore
+            FROM userdata u
+            INNER JOIN pdfdata a ON u.id = a.userdata_id
+            INNER JOIN imagedata d ON a.id = d.pdfdata_id
+            INNER JOIN imagedata_full b ON d.id = b.id
+            INNER JOIN report_score r ON b.id = r.id
+            WHERE
+              u.ownerId = ${ctx.user.memberId}
+              AND u.YN = 1
+              AND UPPER(u.Class) = ${classParamUpper}
+              AND r.total_score IS NOT NULL
+              ${Prisma.raw(timeCondition)}
+            GROUP BY COALESCE(r.classno, 0), FORMAT(u.UploadTime, 'yyyy-MM')
+            ORDER BY classno, month
+          `;
 
-      results = rawData.map((item) => ({
-        classno: item.classno || 0,
-        month: item.month,
-        averageScore: item.avgScore || 0,
-        count: Number(item.count),
-      }));
-    } else {
-      // 使用 userdata、pdfdata、imagedata、imagedata_full、report_score 表（英文版本）
-      // 关联链路: userdata → pdfdata → imagedata → imagedata_full → report_score
-      // 按 report_score.classno 分组
-      const sqlQuery = Prisma.sql`
-        SELECT
-          COALESCE(r.classno, 0) as classno,
-          FORMAT(u.UploadTime, 'yyyy-MM') as month,
-          COUNT(*) as count,
-          AVG(CAST(r.total_score AS FLOAT)) as avgScore
-        FROM userdata u
-        INNER JOIN pdfdata a ON u.id = a.userdata_id
-        INNER JOIN imagedata d ON a.id = d.pdfdata_id
-        INNER JOIN imagedata_full b ON d.id = b.id
-        INNER JOIN report_score r ON b.id = r.id
-        WHERE
-          u.ownerId = ${ctx.user.memberId}
-          AND u.YN = 1
-          AND u.Class = ${classParam}
-          AND r.total_score IS NOT NULL
-          ${Prisma.raw(timeCondition)}
-        GROUP BY COALESCE(r.classno, 0), FORMAT(u.UploadTime, 'yyyy-MM')
-        ORDER BY classno, month
-      `;
+          const rawData = await prisma.$queryRaw<
+            Array<{ classno: number | null; month: string; count: bigint; avgScore: number }>
+          >(sqlQuery);
 
-      const rawData = await prisma.$queryRaw<
-        Array<{ classno: number | null; month: string; count: bigint; avgScore: number }>
-      >(sqlQuery);
+          return rawData.map((item) => ({
+            classno: item.classno || 0,
+            month: item.month,
+            averageScore: item.avgScore || 0,
+            count: Number(item.count),
+          }));
+        }
+      })(),
+    ]);
 
-      results = rawData.map((item) => ({
-        classno: item.classno || 0,
-        month: item.month,
-        averageScore: item.avgScore || 0,
-        count: Number(item.count),
-      }));
+    console.log(`[getClassMonthlyTrendsByClassNo] 并发查询完成，获取到 ${allStudents.length} 名学生，${results.length} 条统计记录`);
+
+    // 按 class + classno 组合键分组学生（使用大写确保匹配一致性）
+    const studentsByClassAndClassno = new Map<string, Member>();
+    for (const student of allStudents) {
+      const classUpper = student.class.toUpperCase();
+      studentsByClassAndClassno.set(`${classUpper}_${student.classno}`, student);
     }
+
+    console.log(`[getClassMonthlyTrendsByClassNo] 学生按 class + classno 分组完成，共 ${JSON.stringify(studentsByClassAndClassno, null, 2)} 个分组`);
 
     console.log('[getClassMonthlyTrendsByClassNo] 查询结果:', {
       resultCount: results.length,
       totalEssays: results.reduce((sum, item) => sum + item.count, 0),
     });
 
+    // 将学生信息关联到统计结果
+    const resultsWithStudentCount = results.map((trend) => {
+      // 使用 class + classno 组合键查找学生（使用大写）
+      const key = `${classParamUpper}_${trend.classno}`;
+      return {
+        ...trend,
+        student: studentsByClassAndClassno.get(key),
+      };
+    });
+
     // 返回结果
     ctx.status = 200;
     ctx.body = {
       success: true,
-      data: results,
+      data: resultsWithStudentCount,
       summary: {
         totalRecords: results.length,
         totalEssays: results.reduce((sum, item) => sum + item.count, 0),
         overallAverage: results.length > 0
           ? results.reduce((sum, item) => sum + item.averageScore * item.count, 0) /
-            results.reduce((sum, item) => sum + item.count, 0)
+          results.reduce((sum, item) => sum + item.count, 0)
           : 0,
+        totalStudents: allStudents.length,
       },
     };
   } catch (error) {

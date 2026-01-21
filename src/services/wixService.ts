@@ -7,6 +7,7 @@ import { createClient, ApiKeyStrategy, WixClient, IApiKeyStrategy } from '@wix/s
 import { items } from '@wix/data';
 import { config } from '../config';
 import { OralSpeechRecord } from '../types/oral-speech-record.types';
+import { LRUCache } from 'lru-cache';
 
 /**
  * Member interface based on MemberLookup collection schema
@@ -32,12 +33,32 @@ export interface Member {
 
 
 /**
+ * Cache options interface
+ */
+interface CacheEntry {
+  data: Member[];
+  timestamp: number;
+}
+
+/**
  * Wix Service class
  */
 class WixService {
   private client: WixClient<undefined, IApiKeyStrategy, {
     items: typeof items;
   }>;
+
+  /**
+   * LRU cache for student data
+   * Key: teacher email
+   * Value: CacheEntry containing students data and timestamp
+   */
+  private studentsCache: LRUCache<string, CacheEntry>;
+
+  /**
+   * Cache TTL in milliseconds (5 minutes)
+   */
+  private readonly CACHE_TTL = 5 * 60 * 1000;
 
   /**
    * Initialize Wix service with API credentials
@@ -54,12 +75,27 @@ class WixService {
         siteId: config.wix.siteId,
       }),
     });
+
+    // Initialize LRU cache with max 100 entries
+    this.studentsCache = new LRUCache<string, CacheEntry>({
+      max: 100,
+      ttl: this.CACHE_TTL,
+    });
   }
 
   async getStudentsByTeacher(email: string): Promise<Member[]> {
     const collectionId = 'MemberLookup';
 
     try {
+      // Check cache first
+      const cachedEntry = this.studentsCache.get(email);
+      if (cachedEntry) {
+        console.log(`Cache hit for teacher: ${email}`);
+        return cachedEntry.data;
+      }
+
+      console.log(`Cache miss for teacher: ${email}, fetching from Wix API...`);
+
       // First, get the teacher's record to find their school and classes
       const result = await this.client.items
         .query(collectionId)
@@ -82,12 +118,47 @@ class WixService {
         .eq('school', school)
         .hasSome('class', classes).find();
 
-      return studentsResult.items as unknown as Member[];
-      // Parse teacher's class assignments        
+      const students = studentsResult.items as unknown as Member[];
+
+      // Store in cache
+      this.studentsCache.set(email, {
+        data: students,
+        timestamp: Date.now(),
+      });
+
+      console.log(`Cached ${students.length} students for teacher: ${email}`);
+
+      return students;
     } catch (error) {
       console.error('Error finding students:', error);
       throw new Error(`Failed to find students: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Clear cache for a specific teacher
+   */
+  clearTeacherCache(email: string): void {
+    this.studentsCache.delete(email);
+    console.log(`Cache cleared for teacher: ${email}`);
+  }
+
+  /**
+   * Clear all cached student data
+   */
+  clearAllCache(): void {
+    this.studentsCache.clear();
+    console.log('All student cache cleared');
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { size: number; maxSize: number } {
+    return {
+      size: this.studentsCache.size,
+      maxSize: this.studentsCache.max,
+    };
   }
 
   async getOralByMember(
