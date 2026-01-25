@@ -79,7 +79,7 @@ export const routes: RouteConfig[] = [
   // 获取各个班级的作文平均分统计（需要认证，支持时间筛选和多语言）
   {
     method: 'GET',
-    path: '/class-average-scores',
+    path: '/submission/class-summary',
     handler: getClassAverageScores,
     requireAuth: true,
   },
@@ -87,7 +87,7 @@ export const routes: RouteConfig[] = [
   // 获取按 classno 分组的班级月度平均分趋势统计（需要认证，支持时间筛选和多语言）
   {
     method: 'GET',
-    path: '/class-monthly-trends-by-classno',
+    path: '/submission/classno-summary',
     handler: getClassMonthlyTrendsByClassNo,
     requireAuth: true,
   },

@@ -88,6 +88,191 @@ essai-api/
 - 问题管理
 - 学生提交记录
 
+## API 设计规范
+
+### RESTful API 范式
+
+本项目遵循 RESTful API 设计原则，确保 API 的一致性、可预测性和可维护性。
+
+#### 1. 路径命名规范
+
+**基础规则：**
+- 使用小写字母
+- 使用连字符（`-`）分隔单词
+- 使用复数形式表示资源集合
+- 使用单数形式表示特定资源
+
+**路径结构模式：**
+
+| 模式 | 说明 | 示例 |
+|------|------|------|
+| `/resource` | 资源集合 | `/users`, `/submissions` |
+| `/resource/{id}` | 特定资源 | `/users/123` |
+| `/resource/action` | 资源操作 | `/users/students` |
+| `/resource/sub-resource` | 子资源 | `/submission/list` |
+| `/resource/sub-resource/action` | 子资源操作 | `/submission/class-summary` |
+
+**现有 API 路径分类：**
+
+| 资源类型 | 路径前缀 | 说明 |
+|---------|---------|------|
+| 健康检查 | `/health` | 系统健康状态 |
+| 用户管理 | `/users` | 用户相关操作 |
+| 作业提交 | `/submission` | 作业提交相关操作 |
+| 学生作业 | `/student-homeworks` | 学生作业查询 |
+| 口语作业 | `/oral-homeworks` | 口语作业查询 |
+| 学生作文 | `/student-essays` | 学生作文查询 |
+
+#### 2. HTTP 方法规范
+
+| 方法 | 用途 | 幂等性 | 示例 |
+|------|------|--------|------|
+| `GET` | 获取资源 | 是 | `GET /users/me` |
+| `POST` | 创建资源 | 否 | `POST /submissions` |
+| `PUT` | 完整更新资源 | 是 | `PUT /users/123` |
+| `PATCH` | 部分更新资源 | 否 | `PATCH /users/123` |
+| `DELETE` | 删除资源 | 是 | `DELETE /submissions/123` |
+
+#### 3. 查询参数规范
+
+**通用查询参数：**
+
+| 参数 | 类型 | 说明 | 示例 |
+|------|------|------|------|
+| `page` | number | 页码，从 1 开始 | `page=1` |
+| `pageSize` | number | 每页数量，最大 100 | `pageSize=10` |
+| `lang` | string | 语言版本（en/hk） | `lang=en` |
+| `startDate` | string | 开始日期，ISO 8601 格式 | `startDate=2024-01-01` |
+| `endDate` | string | 结束日期，ISO 8601 格式 | `endDate=2024-12-31` |
+| `class` | string | 班级名称 | `class=P1A` |
+| `classno` | number | 班级编号 | `classno=1` |
+| `studentId` | string | 学生 ID | `studentId=123456` |
+| `memberId` | string | 成员 ID | `memberId=123456` |
+
+**参数命名约定：**
+- 使用驼峰命名法（camelCase）
+- 日期参数使用 `startDate` 和 `endDate` 表示范围
+- 分页参数使用 `page` 和 `pageSize`
+- 语言参数使用 `lang`，值为 `en` 或 `hk`
+
+#### 4. 响应格式规范
+
+**成功响应：**
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "pagination": {
+    "page": 1,
+    "pageSize": 10,
+    "totalCount": 100,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrev": false
+  },
+  "summary": { ... }
+}
+```
+
+**错误响应：**
+
+```json
+{
+  "error": "Error type",
+  "message": "Detailed error message"
+}
+```
+
+**HTTP 状态码：**
+
+| 状态码 | 说明 | 使用场景 |
+|--------|------|----------|
+| 200 | OK | 请求成功 |
+| 201 | Created | 资源创建成功 |
+| 400 | Bad Request | 请求参数错误 |
+| 401 | Unauthorized | 未认证 |
+| 403 | Forbidden | 无权限访问 |
+| 404 | Not Found | 资源不存在 |
+| 500 | Internal Server Error | 服务器内部错误 |
+
+#### 5. 认证规范
+
+**JWT Token 格式：**
+
+```
+Authorization: Bearer <token>
+```
+
+**Token Payload 结构：**
+
+```json
+{
+  "memberId": "123456",
+  "rolekey": "teachers",
+  "school": "Hong Kong School",
+  "email": "teacher@example.com",
+  "iat": 1642425600,
+  "exp": 1643030400
+}
+```
+
+#### 6. 多语言支持规范
+
+**语言参数：**
+- `lang=en` - 英文版本
+- `lang=hk` - 中文版本（繁体）
+
+**数据库表命名：**
+- 英文版本：`userdata`, `pdfdata`, `imagedata`, `imagedata_full`, `report_score`
+- 中文版本：`c_userdata`, `c_pdfdata`, `c_imagedata`, `c_imagedata_full`, `report_score_c`
+
+#### 7. 新增 API 端点流程
+
+1. **创建路由文件**：在 `src/routes/` 目录下创建新的路由文件
+2. **实现处理函数**：按照现有模式实现路由处理函数
+3. **注册路由**：在 `src/routes/index.ts` 中注册新路由
+4. **添加类型定义**：在 `src/types/index.ts` 中添加相关类型
+5. **更新文档**：在 README.md 中添加 API 端点文档
+6. **前端集成**：在 `essai-web/services/web_api/` 中添加对应的 API 调用服务
+
+**路由注册示例：**
+
+```typescript
+// src/routes/index.ts
+import { myNewRoute } from './my-new-route';
+
+export const routes: RouteConfig[] = [
+  // ... 其他路由
+  {
+    method: 'GET',
+    path: '/resource/action',
+    handler: myNewRoute,
+    requireAuth: true,
+  },
+];
+```
+
+**前端服务示例：**
+
+```typescript
+// essai-web/services/web_api/my-new-route.ts
+import { createApiHelper, WEB_API_BASE } from '../api/shared';
+
+const request = createApiHelper(WEB_API_BASE);
+
+export async function fetchMyData(params: MyParams): Promise<MyResult> {
+  const data = await request<MyApiResponse>(`/resource/action`, {
+    query: params
+  });
+
+  if (data.success) {
+    return data;
+  }
+  throw new Error(data.error || "Failed to fetch.");
+}
+```
+
 ## API 端点
 
 ### 基础信息
@@ -193,6 +378,277 @@ GET /api/submission/list?page=1&pageSize=10&lang=en
     "totalPages": 10,
     "hasNext": true,
     "hasPrev": false
+  }
+}
+```
+
+#### 5. 获取学生所有作业表
+```http
+GET /api/student-homeworks?studentId=123456&startDate=2024-01-01&endDate=2024-12-31
+```
+
+**认证**: 需要 JWT
+
+**查询参数**:
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `studentId` | string | 是 | - | 学生 ID |
+| `startDate` | string | 否 | - | 开始日期（ISO 8601 格式） |
+| `endDate` | string | 否 | - | 结束日期（ISO 8601 格式） |
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "studentId": "123456",
+      "id": 1,
+      "studentHomeworkId": "hw1",
+      "homeworkId": "hw001",
+      "teacherId": "teacher1",
+      "email": "student@example.com",
+      "school": "Hong Kong School",
+      "createdAt": "2026-01-17T10:00:00.000Z",
+      "essay_text": "My essay content...",
+      "report_url": "https://example.com/report.pdf"
+    }
+  ],
+  "total": 10,
+  "params": {
+    "studentId": "123456",
+    "startDate": "2024-01-01",
+    "endDate": "2024-12-31"
+  }
+}
+```
+
+#### 6. 获取学生口语作业列表
+```http
+GET /api/oral-homeworks?memberId=123456&startDate=2024-01-01&endDate=2024-12-31
+```
+
+**认证**: 需要 JWT
+
+**查询参数**:
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `memberId` | string | 是 | - | 成员 ID |
+| `startDate` | string | 是 | - | 开始日期（ISO 8601 格式） |
+| `endDate` | string | 是 | - | 结束日期（ISO 8601 格式） |
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "oral1",
+      "memberId": "123456",
+      "email": "student@example.com",
+      "school": "Hong Kong School",
+      "class": "P1A",
+      "classno": 1,
+      "fullName": "John Doe",
+      "oralLanguage": "en",
+      "oralMode": 1,
+      "totalScore": 85,
+      "speechAccuracyScore": 90,
+      "speechFluencyScore": 80,
+      "speechProsodyScore": 85,
+      "speechCompletenessScore": 85,
+      "speechPronunciationScore": 88,
+      "overallTotalScore": 85,
+      "durationMs": 30000,
+      "recordingUrl": "https://example.com/audio.mp3",
+      "speechWords": [
+        {
+          "word": "hello",
+          "accuracy_score": 95,
+          "offset": 100,
+          "duration": 500,
+          "error_type": "None"
+        }
+      ],
+      "speechErrorSummary": {
+        "mispronunciations": 2,
+        "omissions": 1,
+        "insertions": 0
+      },
+      "contentScores": {
+        "organization": 85,
+        "coherence": 80,
+        "grammar": 85,
+        "vocabulary": 82,
+        "topic_relevance": 88
+      }
+    }
+  ]
+}
+```
+
+#### 7. 获取学生作文列表
+```http
+GET /api/student-essays?member_id=123456&school=HK&schoolclass=P1A&classno=1&start_date=2024-01-01&end_date=2024-12-31
+```
+
+**认证**: 需要 JWT
+
+**查询参数**:
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `member_id` | string | 是 | - | 成员 ID |
+| `school` | string | 是 | - | 学校名称 |
+| `schoolclass` | string | 是 | - | 班级名称 |
+| `classno` | string | 是 | - | 班级编号 |
+| `start_date` | string | 否 | - | 开始日期（ISO 8601 格式） |
+| `end_date` | string | 否 | - | 结束日期（ISO 8601 格式） |
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "language": "english",
+      "language_type": "en",
+      "total_score": 85,
+      "total_score_max": 100,
+      "content_score": 85,
+      "content_score_max": 100,
+      "language_score": 82,
+      "language_score_max": 100,
+      "grammar_score": 88,
+      "grammar_score_max": 100,
+      "organization_score": 85,
+      "organization_score_max": 100,
+      "word_count_score": 85,
+      "word_count_score_max": 100,
+      "strengths": "Good vocabulary usage",
+      "weaknesses": "Some grammar errors",
+      "school": "Hong Kong School",
+      "schoolclass": "P1A",
+      "classno": 1,
+      "original_text": "My essay content...",
+      "revised_text": "Revised essay content...",
+      "title": "My Essay",
+      "relevancy": "High",
+      "image_url": "https://example.com/image.jpg",
+      "pdf_url": "https://example.com/essay.pdf",
+      "report_url": "https://example.com/report.pdf"
+    }
+  ],
+  "total": 5,
+  "summary": {
+    "english_count": 3,
+    "chinese_count": 2
+  },
+  "params": {
+    "member_id": "123456",
+    "school": "HK",
+    "schoolclass": "P1A",
+    "classno": "1"
+  }
+}
+```
+
+#### 8. 获取班级月度平均分统计
+```http
+GET /api/submission/class-summary?lang=en&startDate=2024-01-01&endDate=2024-12-31
+```
+
+**认证**: 需要 JWT
+
+**查询参数**:
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `lang` | string | 否 | en | 语言（en/hk） |
+| `startDate` | string | 否 | - | 开始日期（ISO 8601 格式） |
+| `endDate` | string | 否 | - | 结束日期（ISO 8601 格式） |
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "class": "P1A",
+      "month": "2024-01",
+      "averageScore": 82.5,
+      "count": 20
+    },
+    {
+      "class": "P1B",
+      "month": "2024-01",
+      "averageScore": 78.3,
+      "count": 18
+    }
+  ],
+  "summary": {
+    "totalRecords": 24,
+    "totalEssays": 450,
+    "overallAverage": 80.5
+  }
+}
+```
+
+#### 9. 获取按 classno 分组的班级月度平均分趋势统计
+```http
+GET /api/submission/classno-summary?lang=en&class=P1A&startDate=2024-01-01&endDate=2024-12-31
+```
+
+**认证**: 需要 JWT
+
+**查询参数**:
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `lang` | string | 否 | en | 语言（en/hk） |
+| `class` | string | 是 | - | 班级名称 |
+| `startDate` | string | 否 | - | 开始日期（ISO 8601 格式） |
+| `endDate` | string | 否 | - | 结束日期（ISO 8601 格式） |
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "classno": 1,
+      "month": "2024-01",
+      "averageScore": 85.2,
+      "count": 10,
+      "student": {
+        "memberId": "123456",
+        "title": "student@example.com",
+        "school": "Hong Kong School",
+        "class": "P1A",
+        "classno": 1,
+        "firstname_e": "John",
+        "rolekey": "students"
+      }
+    },
+    {
+      "classno": 2,
+      "month": "2024-01",
+      "averageScore": 79.8,
+      "count": 10,
+      "student": {
+        "memberId": "789012",
+        "title": "student2@example.com",
+        "school": "Hong Kong School",
+        "class": "P1A",
+        "classno": 2,
+        "firstname_e": "Jane",
+        "rolekey": "students"
+      }
+    }
+  ],
+  "summary": {
+    "totalRecords": 24,
+    "totalEssays": 240,
+    "overallAverage": 82.5,
+    "totalStudents": 12
   }
 }
 ```
