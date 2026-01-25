@@ -349,6 +349,87 @@ class WixService {
       throw new Error(`Failed to find oral records: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
+
+  /**
+   * Get oral score trends aggregated by class
+   * @param memberIds - Array of student member IDs to filter by
+   * @param options - Query options including language and date filters
+   * @returns Aggregated scores grouped by class
+   */
+  async getOralScoreTrends(
+    options: {
+      language?: string;
+      startDate?: string;
+      endDate?: string;
+      memberIds?: string[],
+      classes?: string[],
+    } = {}
+  ): Promise<Array<{
+    class: string;
+    count: number;
+    averageScore: number;
+  }>> {
+    const collectionId = 'oralUsage';
+    const { language, startDate, endDate, memberIds, classes } = options;
+
+    try {
+      // Build filter with memberIds
+      let filter = this.client.items.filter();
+
+      if (memberIds && memberIds.length > 0) {
+        filter = filter.hasSome('memberId', memberIds);
+      }
+      // Add class filter if provided
+      if (classes && classes.length > 0) {
+        filter = filter.hasSome('class', classes);
+      }
+      // Add optional filters
+      if (language) {
+        filter = filter.eq('language', language);
+      }
+      if (startDate) {
+        filter = filter.ge('_createdDate', new Date(startDate));
+      }
+      if (endDate) {
+        filter = filter.le('_createdDate', new Date(endDate));
+      }
+
+      // Use aggregate to group by class and get count + average score
+      const aggregateResult = await this.client.items
+        .aggregate(collectionId)
+        .filter(filter)
+        .group('class')
+        .count()
+        .avg('overallTotalScore', 'averageScore')
+        .run();
+
+      console.log('Oral score trends aggregate result:', aggregateResult);
+
+      // Process aggregate results
+      const trends: Array<{
+        class: string;
+        count: number;
+        averageScore: number;
+      }> = [];
+
+      for (const item of aggregateResult.items) {
+        const classValue = item.class as string;
+        const count = item.count as number;
+        const averageScore = item.averageScore as number || 0;
+
+        trends.push({
+          class: classValue,
+          count,
+          averageScore,
+        });
+      }
+
+      return trends;
+    } catch (error) {
+      console.error('Error getting oral score trends:', error);
+      throw new Error(`Failed to get oral score trends: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }
 
 // Export singleton instance

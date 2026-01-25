@@ -6,7 +6,7 @@ import { getCurrentUser, getMyStudents } from './users';
 import { health } from './health';
 import { getSubmissionList, getClassAverageScores, getClassMonthlyTrendsByClassNo } from './submissions';
 import { getStudentHomeworks } from './student-homework';
-import { getOralHomeworks, getTeacherOralHomeworks } from './oral-homeworks';
+import { getOralHomeworks, getTeacherOralHomeworks, getOralScoreTrends } from './oral-homeworks';
 import { getStudentEssays } from './student-essays';
 import { HttpContext } from '../types';
 
@@ -73,6 +73,14 @@ export const routes: RouteConfig[] = [
     method: 'GET',
     path: '/oral/homeworks',
     handler: getTeacherOralHomeworks,
+    requireAuth: true,
+  },
+
+  // 获取oral得分趋势（需要认证，按班级聚合）
+  {
+    method: 'GET',
+    path: '/oral/score-trends',
+    handler: getOralScoreTrends,
     requireAuth: true,
   },
 

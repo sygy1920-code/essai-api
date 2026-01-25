@@ -88,6 +88,59 @@ export async function getOralHomeworks(ctx: HttpContext): Promise<void> {
 }
 
 /**
+ * 获取oral得分趋势（按班级聚合）
+ * GET /api/oral/score-trends?startDate={startDate}&endDate={endDate}&language={language}
+ */
+export async function getOralScoreTrends(ctx: HttpContext): Promise<void> {
+  if (!ctx.user) {
+    ctx.status = 401;
+    ctx.body = {
+      error: 'Unauthorized',
+    };
+    return;
+  }
+
+  // 解析查询参数
+  const query = ctx.req.query;
+  const startDate = query.get('startDate');
+  const endDate = query.get('endDate');
+  const language = query.get('language');
+
+  try {
+    const classes = ctx.user.class ? ctx.user.class.split(',').map((c: string) => c.trim()).filter((c: string) => c) : [];
+
+    if (classes.length === 0) {
+      ctx.status = 400;
+      ctx.body = {
+        error: 'No classes found for the user',
+      };
+      return;
+    }
+
+    const trends = await wixService.getOralScoreTrends({
+      classes,
+      language: language || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    });
+
+    // 返回结果
+    ctx.status = 200;
+    ctx.body = {
+      success: true,
+      data: trends,
+    };
+  } catch (error) {
+    console.error('Error fetching oral score trends:', error);
+    ctx.status = 500;
+    ctx.body = {
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
  * 获取教师口语作业列表（包含平均分）
  * GET /api/oral-homeworks/teacher?page={page}&pageSize={pageSize}&startDate={startDate}&endDate={endDate}&type={type}&language={language}
  */
