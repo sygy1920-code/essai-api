@@ -1,24 +1,17 @@
 /**
- * 学生作文相关路由
- */
-
-import { prisma } from '../db/connection';
-import { HttpContext } from '../types';
-import type {
-  GetStudentEssaysParams,
-  StudentEssaysResponse,
-} from '../types/student-essays.types';
-import { Prisma } from '@prisma/client';
-
-/**
  * 获取学生作文列表（包含英文和中文作文）
- * GET /api/student-essays?member_id={member_id}&school={school}&schoolclass={schoolclass}&classno={classno}&start_date={start_date}&end_date={end_date}
+ * GET /student/essays
  *
  * 支持时间段筛选：
  * - start_date: 开始日期，ISO 8601 格式，例如: "2024-01-01"
  * - end_date: 结束日期，ISO 8601 格式，例如: "2024-12-31"
  */
-export async function getStudentEssays(ctx: HttpContext): Promise<void> {
+
+import { prisma } from '../../db/connection';
+import { HttpContext } from '../../types';
+import { Prisma } from '@prisma/client';
+
+export async function handler(ctx: HttpContext): Promise<void> {
   if (!ctx.user) {
     ctx.status = 401;
     ctx.body = {
@@ -226,14 +219,14 @@ export async function getStudentEssays(ctx: HttpContext): Promise<void> {
         classno,
         start_date,
         end_date,
-      } as GetStudentEssaysParams,
-    } as StudentEssaysResponse;
+      },
+    };
   } catch (error) {
     console.error('Error fetching student essays:', error);
     ctx.status = 500;
     ctx.body = {
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error',
-    } as StudentEssaysResponse;
+    };
   }
 }

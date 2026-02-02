@@ -13,8 +13,7 @@
     "test": "echo \"No tests yet...\"",
     "prisma:generate": "prisma generate",
     "prisma:pull": "printf 'generator client {\\n  provider = \"prisma-client-js\"\\n}\\n\\ndatasource db {\\n  provider = \"sqlserver\"\\n}\\n' > prisma/schema.prisma && prisma db pull",
-    "wix:collection": "ts-node scripts/get-wix-collection.ts",
-    "generate-jwt": "ts-node scripts/generate-jwt.ts"
+    "export:oral-usage": "ts-node scripts/exportOralUsageToCsv.ts"
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",

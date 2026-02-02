@@ -569,6 +569,136 @@ model imagedata_ocr_archive {
   @@ignore
 }
 
+model MemberLookup {
+  email                  String? @db.NVarChar(50)
+  memberId               String? @db.NVarChar(50)
+  userCredits            String? @db.NVarChar(50)
+  rolekey                String? @db.NVarChar(50)
+  roleid                 String? @db.NVarChar(50)
+  school                 String? @db.NVarChar(50)
+  Created_Date           String? @db.NVarChar(50)
+  class                  String? @db.NVarChar(Max)
+  classno                Int?    @db.TinyInt
+  grade                  String? @db.NVarChar(50)
+  firstname_c            String? @db.NVarChar(50)
+  lastname_c             String? @db.NVarChar(50)
+  firstname_e            String? @db.NVarChar(50)
+  lastname_e             String? @db.NVarChar(50)
+  ReferenceSchoolClasses String? @db.NVarChar(50)
+  ID                     String  @id(map: "PK_MemberLookup") @db.NVarChar(50)
+  Updated_Date           String? @db.NVarChar(50)
+  Owner                  String? @db.NVarChar(50)
+}
+
+model oralReport {
+  CallID                            String?   @db.NVarChar(50)
+  Overalltotalscore                 Float?
+  Transcript                        String?   @db.NVarChar(Max)
+  Feedbacksummary                   String?   @db.NVarChar(Max)
+  Summary                           String?   @db.NVarChar(Max)
+  Pronunciationimprovementwords     String?   @db.NVarChar(Max)
+  Strengths                         String?   @db.NVarChar(Max)
+  Weaknesses                        String?   @db.NVarChar(Max)
+  Contentscore                      Float?
+  Interactiontotalscore             Float?
+  Languagescore                     Float?
+  Readingscore                      Float?
+  Personalexperienceexpressionscore Float?
+  Pronunciationscore                Float?
+  Interactionscore                  Float?
+  expressionScore                   Float?
+  communicationScore                Float?
+  vocabularyScore                   Float?
+  ideasScore                        Float?
+  Pacingscore                       Float?
+  Organizationscore                 Float?
+  Recordingurl                      String?   @db.NVarChar(Max)
+  Oral_Report_Item                  String?   @db.NVarChar(Max)
+  AssistantId                       String?   @db.VarChar(Max)
+  Cost                              Float?
+  Endedreason                       String?   @db.NVarChar(Max)
+  Timestamp                         String?   @db.VarChar(50)
+  durationMinutes                   Float?
+  durationSeconds                   Float?
+  studentHomeworkId                 String?   @db.VarChar(50)
+  updateNote                        String?   @db.NVarChar(50)
+  ID                                String    @id(map: "PK_oralReport") @db.NVarChar(50)
+  Created_Date                      DateTime? @db.DateTime
+  Updated_Date                      DateTime? @db.DateTime
+  Owner                             String?   @db.NVarChar(50)
+}
+
+model oralUsage {
+  createdDate                       DateTime?
+  id                                String    @id(map: "PK_oralUsage") @db.NVarChar(50)
+  owner                             String?   @db.NVarChar(50)
+  updatedDate                       DateTime?
+  assistantId                       String?   @db.NVarChar(50)
+  audioFilename                     String?   @db.NVarChar(50)
+  callId                            String?   @db.NVarChar(50)
+  class                             String?   @db.NVarChar(Max)
+  classno                           Int?      @db.TinyInt
+  communicationScore                Float?
+  contactId                         String?   @db.NVarChar(50)
+  contentScore                      Float?
+  contentScores                     String?   @db.NVarChar(Max)
+  cost                              Float?
+  createDate                        DateTime?
+  creditsUsed                       Float?
+  durationMinutes                   String?   @db.VarChar(50)
+  durationMs                        String?   @db.VarChar(50)
+  durationS                         String?   @db.VarChar(50)
+  durationSeconds                   Float?
+  email                             String?   @db.NVarChar(50)
+  expressionScore                   Float?
+  feedbackSummary                   String?   @db.NVarChar(Max)
+  fullName                          String?   @db.NVarChar(50)
+  ideasScore                        Float?
+  interactionScore                  Float?
+  interactionTotalScore             Float?
+  language                          String?   @db.NVarChar(50)
+  languageScore                     Float?
+  memberId                          String?   @db.NVarChar(50)
+  mode                              String?   @db.NVarChar(50)
+  modeId                            Int?      @db.TinyInt
+  note                              String?   @db.NVarChar(1)
+  oralMode                          Int?      @db.TinyInt
+  oralQuestionId                    String?   @db.NVarChar(50)
+  oralReportItemLink                String?   @db.VarChar(Max)
+  oralUsageType                     Int?      @db.TinyInt
+  organizationScore                 Float?
+  overallTotalScore                 Float?
+  pacingScore                       Float?
+  personalExperienceExpressionScore Float?
+  processingTimeMs                  Int?
+  pronunciationImprovementWords     String?   @db.NVarChar(Max)
+  pronunciationScore                Int?      @db.TinyInt
+  readingScore                      Int?      @db.TinyInt
+  recordingUrl                      String?   @db.VarChar(Max)
+  school                            String?   @db.NVarChar(50)
+  speechAccuracyScore               Float?
+  speechCompletenessScore           Float?
+  speechErrorSummary                String?   @db.NVarChar(Max)
+  speechFluencyScore                Float?
+  speechMispronounced               String?   @db.NVarChar(Max)
+  speechPronunciationScore          Float?
+  speechProsodyScore                Float?
+  speechProvider                    String?   @db.NVarChar(50)
+  speechRecognizedText              String?   @db.NVarChar(Max)
+  speechReferenceText               String?   @db.NVarChar(Max)
+  speechWords                       String?   @db.NVarChar(Max)
+  strengths                         String?   @db.NVarChar(Max)
+  studentHomeworkId                 String?   @db.NVarChar(50)
+  subject                           String?   @db.NVarChar(50)
+  summary                           String?   @db.NVarChar(Max)
+  totalScore                        Float?
+  transcript                        String?   @db.NVarChar(Max)
+  updateNote                        String?   @db.VarChar(50)
+  veloCode                          String?   @db.VarChar(50)
+  vocabularyScore                   Float?
+  weaknesses                        String?   @db.NVarChar(Max)
+}
+
 model pdfdata {
   id                        Int              @id(map: "PK__pdfdata__3213E83F5692D3DC") @default(autoincrement())
   userdata_id               Int

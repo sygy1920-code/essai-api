@@ -1,16 +1,15 @@
 /**
- * 学生作文相关路由
+ * 获取学生所有作业列表（包含中英文）
+ * GET /student-homeworks
+ *
+ * 查询参数: studentId, startDate, endDate
  */
 
 import { teacherAssignment } from '@prisma/client';
-import { prisma } from '../db/connection';
-import { HttpContext } from '../types';
+import { prisma } from '../../db/connection';
+import { HttpContext } from '../../types';
 
-/**
- * 获取学生所有作业列表（包含中英文）
- * GET /api/student-homeworks?studentId={studentId}&startDate={startDate}&endDate={endDate}
- */
-export async function getStudentHomeworks(ctx: HttpContext): Promise<void> {
+export async function handler(ctx: HttpContext): Promise<void> {
   if (!ctx.user) {
     ctx.status = 401;
     ctx.body = {

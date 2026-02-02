@@ -2,22 +2,32 @@
  * 路由定义
  */
 
-import { getCurrentUser, getMyStudents } from './users';
-import { health } from './health';
-import { getSubmissionList, getClassAverageScores, getClassMonthlyTrendsByClassNo } from './submissions';
-import { getStudentHomeworks } from './student-homework';
-import { getOralHomeworks, getTeacherOralHomeworks, getOralScoreTrends } from './oral-homeworks';
-import { getStudentEssays } from './student-essays';
-import { HttpContext } from '../types';
+import type { RouteConfig } from './types';
 
-export type RouteHandler = (ctx: HttpContext, next: () => Promise<void>) => void | Promise<void>;
+// Health
+import { handler as health } from './health/index';
 
-export interface RouteConfig {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
-  path: string;
-  handler: RouteHandler;
-  requireAuth?: boolean;
-}
+// Users
+import { handler as getCurrentUser } from './users/me.get';
+import { handler as getMyStudents } from './users/students.get';
+
+// Submissions
+import { handler as getSubmissionList } from './submissions/list.get';
+import { handler as getClassAverageScores } from './submissions/class-summary.get';
+import { handler as getClassMonthlyTrendsByClassNo } from './submissions/classno-summary.get';
+
+// Students
+import { handler as getStudentHomeworks } from './students/homeworks.get';
+import { handler as getStudentEssays } from './students/essays.get';
+
+// Oral
+import { handler as getOralList } from './oral/list.get';
+import { handler as getOralHomeworks } from './oral/homeworks.get';
+import { handler as getOralClassSummary } from './oral/class-summary.get';
+import { handler as getOralClassnoSummary } from './oral/classno-summary.get';
+import { handler as updateOralData } from './oral/update.post';
+
+
 
 export const routes: RouteConfig[] = [
   // 健康检查（无需认证）
@@ -64,23 +74,31 @@ export const routes: RouteConfig[] = [
   {
     method: 'GET',
     path: '/students/oral',
-    handler: getOralHomeworks,
+    handler: getOralList,
     requireAuth: true,
   },
 
-  // 获取教师口语作业列表（需要认证，包含平均分）
+  // 获取学生口语作业列表（需要认证，支持时间筛选）
   {
     method: 'GET',
     path: '/oral/homeworks',
-    handler: getTeacherOralHomeworks,
+    handler: getOralHomeworks,
     requireAuth: true,
   },
 
   // 获取oral得分趋势（需要认证，按班级聚合）
   {
     method: 'GET',
-    path: '/oral/score-trends',
-    handler: getOralScoreTrends,
+    path: '/oral/class-summary',
+    handler: getOralClassSummary,
+    requireAuth: true,
+  },
+
+  // 获取oral按班级和学生分组的统计汇总（需要认证，支持时间筛选）
+  {
+    method: 'GET',
+    path: '/oral/classno-summary',
+    handler: getOralClassnoSummary,
     requireAuth: true,
   },
 
@@ -107,4 +125,15 @@ export const routes: RouteConfig[] = [
     handler: getClassMonthlyTrendsByClassNo,
     requireAuth: true,
   },
+
+  // 更新 oralUsage / oralReport / MemberLookup 数据（需要认证）
+  {
+    method: 'POST',
+    path: '/oral/update',
+    handler: updateOralData,
+    requireAuth: true,
+  },
 ];
+
+// Re-export types
+export * from './types';
