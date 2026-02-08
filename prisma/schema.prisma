@@ -133,36 +133,55 @@ model c_sample_essay {
 }
 
 model c_userdata {
-  Email                  String    @db.NVarChar(255)
-  Class                  String?   @db.NVarChar(255)
-  Title                  String?   @db.NVarChar(Max)
-  UploadTime             DateTime  @db.DateTime
-  Report                 String?   @db.NVarChar(Max)
-  Reporturl              String?   @db.NVarChar(2048)
-  LastUpdated            DateTime? @db.DateTime
-  fileurl                String?   @db.NVarChar(Max)
-  uniqueid               String?   @db.NVarChar(2048)
+  Email                  String               @db.NVarChar(255)
+  Class                  String?              @db.NVarChar(255)
+  Title                  String?              @db.NVarChar(Max)
+  UploadTime             DateTime             @db.DateTime
+  class_report_url       String?              @db.NVarChar(Max)
+  Reporturl              String?              @db.NVarChar(2048)
+  LastUpdated            DateTime?            @db.DateTime
+  fileurl                String?              @db.NVarChar(Max)
+  uniqueid               String?              @db.NVarChar(2048)
   YN                     Boolean?
-  titlephotourl          String?   @db.NVarChar(Max)
+  titlephotourl          String?              @db.NVarChar(Max)
   AverageScore           Float?
-  airevisionamount       String?   @db.VarChar(255)
-  school                 String?   @db.NVarChar(255)
+  airevisionamount       String?              @db.VarChar(255)
+  school                 String?              @db.NVarChar(255)
   example_essay_url      String?
   score_yn               Boolean
   oneessay               Boolean?
   page_no                Int?
   revised_page_no        Int?
-  report_yn              Boolean?  @default(false, map: "DF__c_userdat__repor__04AFB25B")
-  id                     Int       @id(map: "PK__c_userda__3213E83F06F26548") @default(autoincrement())
-  type                   String    @default("", map: "DF__c_userdata__type__7908F585") @db.NVarChar(50)
-  OriginalFileNames      String?   @db.NVarChar(Max)
-  ownerId                String?   @db.NVarChar(50)
-  instruction_photo_desc String?   @db.NVarChar(Max)
+  report_yn              Boolean?             @default(false, map: "DF__c_userdat__repor__04AFB25B")
+  id                     Int                  @id(map: "PK__c_userda__3213E83F06F26548") @default(autoincrement())
+  type                   String               @default("", map: "DF__c_userdata__type__7908F585") @db.NVarChar(50)
+  OriginalFileNames      String?              @db.NVarChar(Max)
+  ownerId                String?              @db.NVarChar(50)
+  instruction_photo_desc String?              @db.NVarChar(Max)
   wordcount              Int?
-  last_edit_time         DateTime? @db.DateTime
+  last_edit_time         DateTime?            @db.DateTime
+  c_userdata_analysis    c_userdata_analysis?
 
   @@unique([UploadTime, Email, school], map: "UQ_c_Userdata_UploadTime_Email_School")
   @@index([uniqueid, ownerId], map: "IX_c_userdata_uniqueid_ownerId")
+}
+
+model c_userdata_analysis {
+  userdata_id        Int        @id(map: "PK__c_userda__22367D379B2831F5")
+  analysis_content   String     @db.NVarChar(Max)
+  analysis_type      String     @default("error_pattern_analysis", map: "DF__c_userdat__analy__0D2FE9C3") @db.NVarChar(100)
+  rows_analyzed      Int
+  model_name         String?    @db.NVarChar(100)
+  processing_time_ms Int?
+  input_tokens       Int?
+  output_tokens      Int?
+  stop_reason        String?    @db.NVarChar(50)
+  created_at         DateTime   @default(dbgenerated("dateadd(hour,(8),getutcdate())"), map: "DF__c_userdat__creat__0E240DFC") @db.DateTime
+  updated_at         DateTime   @default(dbgenerated("dateadd(hour,(8),getutcdate())"), map: "DF__c_userdat__updat__0F183235") @db.DateTime
+  c_userdata         c_userdata @relation(fields: [userdata_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_userdata_analysis_id")
+
+  @@index([analysis_type], map: "idx_analysis_type")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model ChangeTrackingState {
@@ -471,6 +490,8 @@ model imagedata_archive {
   page_no           Int?
   studentHomeworkId String?  @db.NVarChar(50)
   homeworkimages_id Int?
+
+  @@index([pdfdata_id], map: "IX_imagedata_archive_pdfdata_id")
 }
 
 model imagedata_full {
@@ -1040,39 +1061,55 @@ model teacherAssignment {
 }
 
 model userdata {
-  Email                     String    @db.NVarChar(255)
-  Class                     String?   @db.NVarChar(255)
-  Title                     String?   @db.NVarChar(Max)
-  UploadTime                DateTime  @db.DateTime
-  Report                    String?   @db.NVarChar(Max)
-  Reporturl                 String?   @db.NVarChar(2048)
-  LastUpdated               DateTime? @db.DateTime
-  fileurl                   String?   @db.NVarChar(Max)
-  uniqueid                  String?   @db.NVarChar(2048)
+  Email                     String             @db.NVarChar(255)
+  Class                     String?            @db.NVarChar(255)
+  Title                     String?            @db.NVarChar(Max)
+  UploadTime                DateTime           @db.DateTime
+  class_report_url          String?            @db.NVarChar(Max)
+  Reporturl                 String?            @db.NVarChar(2048)
+  LastUpdated               DateTime?          @db.DateTime
+  fileurl                   String?            @db.NVarChar(Max)
+  uniqueid                  String?            @db.NVarChar(2048)
   YN                        Boolean?
-  titlephotourl             String?   @db.NVarChar(Max)
+  titlephotourl             String?            @db.NVarChar(Max)
   AverageScore              Float?
-  airevisionamount          String?   @db.VarChar(255)
-  school                    String?   @db.NVarChar(255)
-  example_essay_url         String?   @db.NVarChar(255)
-  score_yn                  Boolean   @default(true, map: "DF__userdata__score___57DD0BE4")
+  airevisionamount          String?            @db.VarChar(255)
+  school                    String?            @db.NVarChar(255)
+  example_essay_url         String?            @db.NVarChar(255)
+  score_yn                  Boolean            @default(true, map: "DF__userdata__score___57DD0BE4")
   oneessay                  Boolean?
   page_no                   Int?
   revised_page_no           Int?
-  id                        Int       @id(map: "PK_userdata") @default(dbgenerated("NEXT VALUE FOR [dbo].[Userdata_Id_Seq]"), map: "DF_Userdata_Id")
-  report_yn                 Boolean   @default(false, map: "DF_Userdata_report_yn")
-  type                      String    @default("", map: "DF__userdata__type__65F62111") @db.NVarChar(50)
-  OriginalFileNames         String?   @db.NVarChar(Max)
-  ownerId                   String?   @db.NVarChar(50)
+  id                        Int                @id(map: "PK_userdata") @default(dbgenerated("NEXT VALUE FOR [dbo].[Userdata_Id_Seq]"), map: "DF_Userdata_Id")
+  report_yn                 Boolean            @default(false, map: "DF_Userdata_report_yn")
+  type                      String             @default("", map: "DF__userdata__type__65F62111") @db.NVarChar(50)
+  OriginalFileNames         String?            @db.NVarChar(Max)
+  ownerId                   String?            @db.NVarChar(50)
   cn_yn                     Boolean?
-  instruction_photo_desc    String?   @db.NVarChar(Max)
-  instruction_photo_summary String?   @db.NVarChar(Max)
+  instruction_photo_desc    String?            @db.NVarChar(Max)
+  instruction_photo_summary String?            @db.NVarChar(Max)
   wordcount                 Int?
-  last_edit_time            DateTime? @db.DateTime
+  last_edit_time            DateTime?          @db.DateTime
   pdfdata                   pdfdata[]
+  userdata_analysis         userdata_analysis?
 
   @@index([uniqueid, ownerId], map: "IX_userdata_uniqueid_ownerId")
   @@index([YN, report_yn, id], map: "IX_userdata_YN_report_yn_id")
+}
+
+model userdata_analysis {
+  userdata_id        Int      @id(map: "PK__userdata__22367D3748E3A32F")
+  analysis_content   String   @db.NVarChar(Max)
+  analysis_type      String   @default("error_pattern_analysis", map: "DF__userdata___analy__1C722D53") @db.NVarChar(100)
+  rows_analyzed      Int
+  model_name         String?  @db.NVarChar(100)
+  processing_time_ms Int?
+  input_tokens       Int?
+  output_tokens      Int?
+  stop_reason        String?  @db.NVarChar(50)
+  created_at         DateTime @default(dbgenerated("dateadd(hour,(8),getutcdate())"), map: "DF__userdata___creat__1D66518C") @db.DateTime
+  updated_at         DateTime @default(dbgenerated("dateadd(hour,(8),getutcdate())"), map: "DF__userdata___updat__1E5A75C5") @db.DateTime
+  userdata           userdata @relation(fields: [userdata_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_userdata_analysis_en_id")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
